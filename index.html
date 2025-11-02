@@ -3,502 +3,173 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="One Roof - Investissement immobilier familial premium au Maroc. Excellence, confiance et patrimoine.">
-    <title>One Roof | Investissement Immobilier Premium au Maroc</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <meta name="description" content="Console web sécurisée pour démarrer et arrêter vos instances AWS EC2.">
+    <title>Console EC2 | Start & Stop</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="nav" id="nav">
-        <div class="container nav__container">
-            <div class="nav__logo">
-                <svg width="40" height="40" viewBox="0 0 100 100" class="logo-svg">
-                    <rect x="30" y="20" width="50" height="60" fill="none" stroke="#C9A961" stroke-width="3"/>
-                    <polygon points="30,45 40,35 50,45" fill="#1E3A5F"/>
-                    <polygon points="40,55 50,45 60,55 50,65" fill="#C9A961"/>
-                </svg>
-                <span class="nav__logo-text">ONE ROOF</span>
-            </div>
-            <ul class="nav__menu" id="navMenu">
-                <li><a href="#hero" class="nav__link">Accueil</a></li>
-                <li><a href="#about" class="nav__link">À Propos</a></li>
-                <li><a href="#approach" class="nav__link">Notre Approche</a></li>
-                <li><a href="#portfolio" class="nav__link">Portfolio</a></li>
-                <li><a href="#benefits" class="nav__link">Avantages</a></li>
-                <li><a href="#contact" class="nav__link nav__link--cta">Contact</a></li>
-            </ul>
-            <button class="nav__toggle" id="navToggle" aria-label="Toggle menu">
-                <span></span>
-                <span></span>
-                <span></span>
-            </button>
-        </div>
-        <div class="progress-bar" id="progressBar"></div>
-    </nav>
+    <a class="skip-link" href="#main">Aller au contenu principal</a>
 
-    <!-- Hero Section -->
-    <section class="hero" id="hero">
-        <div class="hero__background">
-            <div class="hero__layer hero__layer--1"></div>
-            <div class="hero__layer hero__layer--2"></div>
-            <div class="hero__layer hero__layer--3"></div>
-        </div>
-        <div class="container hero__container">
-            <div class="hero__content">
-                <h1 class="hero__title">
-                    <span class="hero__title-line">Investissez dans</span>
-                    <span class="hero__title-line hero__title-line--accent">l'Excellence</span>
-                    <span class="hero__title-line">Immobilière</span>
-                </h1>
-                <p class="hero__subtitle">
-                    Patrimoine familial · Luxe intemporel · Rendement pérenne
-                </p>
-                <div class="hero__cta">
-                    <a href="#portfolio" class="btn btn--primary">
-                        Découvrir nos Biens
-                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                            <path d="M4 10h12M12 6l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                        </svg>
-                    </a>
-                    <a href="#about" class="btn btn--ghost">Notre Histoire</a>
-                </div>
+    <header class="app-header">
+        <div class="container header-content">
+            <div class="header-text">
+                <h1>Console de contrôle des instances EC2</h1>
+                <p>Initialisez l'accès AWS, filtrez vos instances et exécutez des actions <span class="highlight">Start</span> ou <span class="highlight">Stop</span> en toute simplicité.</p>
+            </div>
+            <div class="header-meta">
+                <span class="badge" aria-label="Cette application n'enregistre pas vos clés">Session locale</span>
+                <button class="help-button" type="button" id="openHelp" aria-haspopup="dialog">Guide</button>
             </div>
         </div>
-        <div class="hero__scroll-indicator">
-            <span>Découvrir</span>
-            <div class="scroll-line"></div>
-        </div>
-    </section>
+    </header>
 
-    <!-- About Section -->
-    <section class="about" id="about">
-        <div class="container">
-            <div class="section-header">
-                <span class="section-header__label">Notre Histoire</span>
-                <h2 class="section-header__title">Une Tradition Familiale d'Excellence</h2>
-            </div>
-            <div class="about__grid">
-                <div class="about__content reveal">
-                    <p class="about__text about__text--lead">
-                        Depuis trois générations, la famille One Roof cultive l'art de l'investissement immobilier premium au Maroc, alliant expertise patrimoniale et vision contemporaine.
-                    </p>
-                    <p class="about__text">
-                        Notre philosophie repose sur des valeurs intemporelles : l'excellence dans la sélection, la confiance dans les relations, et l'engagement envers la pérennité. Chaque bien que nous acquérons est choisi avec le même soin que si nous le destinions à notre propre famille.
-                    </p>
-                    <p class="about__text">
-                        Nous croyons que l'immobilier de luxe transcende le simple investissement pour devenir un héritage, une histoire que l'on transmet avec fierté à travers les générations.
-                    </p>
-                    <div class="about__signature">
-                        <div class="signature-line"></div>
-                        <span class="signature-text">La Famille One Roof</span>
-                    </div>
+    <main class="app-main container" id="main">
+        <section class="card" id="credentialsCard">
+            <div class="card-header">
+                <div>
+                    <h2>Connexion AWS</h2>
+                    <p class="card-intro">Les identifiants saisis ne quittent jamais votre navigateur. Utilisez idéalement un utilisateur IAM restreint.</p>
                 </div>
-                <div class="about__visual reveal">
-                    <div class="about__image-wrapper">
-                        <div class="about__image about__image--main"></div>
-                        <div class="about__pattern"></div>
-                    </div>
-                    <div class="about__values">
-                        <div class="value-item">
-                            <span class="value-item__icon">◆</span>
-                            <span class="value-item__text">Excellence</span>
-                        </div>
-                        <div class="value-item">
-                            <span class="value-item__icon">◆</span>
-                            <span class="value-item__text">Confiance</span>
-                        </div>
-                        <div class="value-item">
-                            <span class="value-item__icon">◆</span>
-                            <span class="value-item__text">Pérennité</span>
-                        </div>
-                    </div>
-                </div>
+                <button type="button" class="link-button" id="resetCredentials" aria-label="Réinitialiser les identifiants AWS">Effacer</button>
             </div>
-        </div>
-    </section>
+            <form id="credentialsForm" autocomplete="off" spellcheck="false" novalidate>
+                <div class="form-grid">
+                    <label class="form-field" for="accessKeyId">
+                        <span>ID de clé d'accès (AKIA...)</span>
+                        <input type="text" id="accessKeyId" name="accessKeyId" required inputmode="latin" autocomplete="off" placeholder="AKIA...">
+                    </label>
+                    <label class="form-field" for="secretAccessKey">
+                        <span>Clé secrète</span>
+                        <input type="password" id="secretAccessKey" name="secretAccessKey" required autocomplete="new-password" placeholder="••••••••">
+                    </label>
+                    <label class="form-field" for="sessionToken">
+                        <span>Token de session (optionnel)</span>
+                        <input type="text" id="sessionToken" name="sessionToken" autocomplete="off" placeholder="Pour les rôles STS">
+                    </label>
+                    <label class="form-field" for="region">
+                        <span>Région AWS</span>
+                        <input type="text" id="region" name="region" required placeholder="eu-west-3">
+                    </label>
+                </div>
+                <div class="form-actions">
+                    <label class="checkbox">
+                        <input type="checkbox" id="persistSession">
+                        <span>Mémoriser dans ce navigateur (localStorage)</span>
+                    </label>
+                    <button type="submit" class="primary">Initialiser le SDK</button>
+                </div>
+                <p class="security-note" role="alert">⚠️ Ne saisissez jamais de clés root. Privilégiez un rôle avec permissions limitées (`ec2:Describe*`, `ec2:StartInstances`, `ec2:StopInstances`).</p>
+            </form>
+        </section>
 
-    <!-- Approach Section -->
-    <section class="approach" id="approach">
-        <div class="container">
-            <div class="section-header section-header--centered">
-                <span class="section-header__label">Notre Méthode</span>
-                <h2 class="section-header__title">Un Processus d'Excellence</h2>
-                <p class="section-header__description">
-                    De la sélection à la gestion, chaque étape est orchestrée avec précision pour garantir votre sérénité et la valorisation de votre patrimoine.
-                </p>
-            </div>
-            <div class="approach__steps">
-                <div class="step reveal">
-                    <div class="step__number">01</div>
-                    <div class="step__icon">
-                        <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-                            <circle cx="24" cy="24" r="20" stroke="#C9A961" stroke-width="2"/>
-                            <path d="M24 14v10l6 6" stroke="#C9A961" stroke-width="2" stroke-linecap="round"/>
-                        </svg>
-                    </div>
-                    <h3 class="step__title">Sélection Rigoureuse</h3>
-                    <p class="step__description">
-                        Analyse approfondie du marché, identification des opportunités premium et évaluation minutieuse de chaque bien selon nos critères d'excellence.
-                    </p>
-                </div>
-                <div class="step-connector reveal"></div>
-                <div class="step reveal">
-                    <div class="step__number">02</div>
-                    <div class="step__icon">
-                        <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-                            <rect x="10" y="14" width="28" height="24" stroke="#C9A961" stroke-width="2"/>
-                            <path d="M18 14V10a2 2 0 012-2h8a2 2 0 012 2v4M24 24v6" stroke="#C9A961" stroke-width="2"/>
-                        </svg>
-                    </div>
-                    <h3 class="step__title">Acquisition Stratégique</h3>
-                    <p class="step__description">
-                        Négociation experte, due diligence complète et accompagnement juridique pour sécuriser votre investissement dans les meilleures conditions.
-                    </p>
-                </div>
-                <div class="step-connector reveal"></div>
-                <div class="step reveal">
-                    <div class="step__number">03</div>
-                    <div class="step__icon">
-                        <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-                            <path d="M10 24l8-8 6 6 14-14" stroke="#C9A961" stroke-width="2" stroke-linecap="round"/>
-                            <circle cx="38" cy="8" r="4" fill="#C9A961"/>
-                        </svg>
-                    </div>
-                    <h3 class="step__title">Valorisation Premium</h3>
-                    <p class="step__description">
-                        Rénovation haut de gamme, mise en scène soignée et positionnement optimal pour maximiser l'attractivité et le rendement locatif.
-                    </p>
-                </div>
-                <div class="step-connector reveal"></div>
-                <div class="step reveal">
-                    <div class="step__number">04</div>
-                    <div class="step__icon">
-                        <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-                            <path d="M24 8l-12 8v16a4 4 0 004 4h16a4 4 0 004-4V16l-12-8z" stroke="#C9A961" stroke-width="2"/>
-                            <path d="M18 36v-12h12v12" stroke="#C9A961" stroke-width="2"/>
-                        </svg>
-                    </div>
-                    <h3 class="step__title">Gestion Personnalisée</h3>
-                    <p class="step__description">
-                        Service conciergerie complet, maintenance proactive et suivi régulier pour préserver la valeur de votre patrimoine immobilier.
-                    </p>
+        <section class="card" id="filtersCard">
+            <div class="card-header">
+                <div>
+                    <h2>Filtres d'instances</h2>
+                    <p class="card-intro">Filtrez par identifiant, tag ou état pour cibler rapidement les ressources souhaitées.</p>
                 </div>
             </div>
-        </div>
-    </section>
+            <form id="filtersForm" class="filters" autocomplete="off">
+                <div class="form-grid">
+                    <label class="form-field" for="instanceId">
+                        <span>ID d'instance</span>
+                        <input type="text" id="instanceId" name="instanceId" placeholder="i-0abcd1234ef567890">
+                    </label>
+                    <label class="form-field" for="tagKey">
+                        <span>Tag (clé)</span>
+                        <input type="text" id="tagKey" name="tagKey" placeholder="Environment">
+                    </label>
+                    <label class="form-field" for="tagValue">
+                        <span>Tag (valeur)</span>
+                        <input type="text" id="tagValue" name="tagValue" placeholder="Production">
+                    </label>
+                    <label class="form-field" for="state">
+                        <span>État</span>
+                        <select id="state" name="state">
+                            <option value="all">Tous</option>
+                            <option value="pending">pending</option>
+                            <option value="running">running</option>
+                            <option value="stopping">stopping</option>
+                            <option value="stopped">stopped</option>
+                            <option value="shutting-down">shutting-down</option>
+                            <option value="terminated">terminated</option>
+                        </select>
+                    </label>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="primary" id="listInstances" disabled>Liste des instances</button>
+                    <button type="button" class="ghost" id="refreshInstances" disabled>Rafraîchir</button>
+                </div>
+            </form>
+        </section>
 
-    <!-- Portfolio Section -->
-    <section class="portfolio" id="portfolio">
-        <div class="container-fluid">
-            <div class="section-header section-header--centered">
-                <span class="section-header__label">Nos Réalisations</span>
-                <h2 class="section-header__title">Portfolio d'Excellence</h2>
-            </div>
-            <div class="portfolio__filters">
-                <button class="filter-btn active" data-filter="all">Tous</button>
-                <button class="filter-btn" data-filter="villa">Villas</button>
-                <button class="filter-btn" data-filter="appartement">Appartements</button>
-                <button class="filter-btn" data-filter="riad">Riads</button>
-            </div>
-            <div class="portfolio__grid">
-                <div class="portfolio-item reveal" data-category="villa">
-                    <div class="portfolio-item__image"></div>
-                    <div class="portfolio-item__overlay">
-                        <span class="portfolio-item__category">Villa Premium</span>
-                        <h3 class="portfolio-item__title">Villa Azur</h3>
-                        <p class="portfolio-item__location">Casablanca · Anfa</p>
-                        <div class="portfolio-item__details">
-                            <span>450m²</span>
-                            <span>5 Chambres</span>
-                            <span>Piscine</span>
-                        </div>
-                    </div>
+        <section class="card" id="instancesCard" aria-live="polite">
+            <div class="card-header">
+                <div>
+                    <h2>Instances EC2</h2>
+                    <p class="card-intro">Les actions sont exécutées immédiatement via l'API AWS. Vérifiez les autorisations avant de poursuivre.</p>
                 </div>
-                <div class="portfolio-item reveal" data-category="appartement">
-                    <div class="portfolio-item__image"></div>
-                    <div class="portfolio-item__overlay">
-                        <span class="portfolio-item__category">Appartement Luxe</span>
-                        <h3 class="portfolio-item__title">Résidence Atlas</h3>
-                        <p class="portfolio-item__location">Marrakech · Guéliz</p>
-                        <div class="portfolio-item__details">
-                            <span>180m²</span>
-                            <span>3 Chambres</span>
-                            <span>Terrasse</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="portfolio-item reveal" data-category="riad">
-                    <div class="portfolio-item__image"></div>
-                    <div class="portfolio-item__overlay">
-                        <span class="portfolio-item__category">Riad Authentique</span>
-                        <h3 class="portfolio-item__title">Riad Sérénité</h3>
-                        <p class="portfolio-item__location">Fès · Médina</p>
-                        <div class="portfolio-item__details">
-                            <span>320m²</span>
-                            <span>6 Suites</span>
-                            <span>Patio</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="portfolio-item reveal" data-category="villa">
-                    <div class="portfolio-item__image"></div>
-                    <div class="portfolio-item__overlay">
-                        <span class="portfolio-item__category">Villa Contemporaine</span>
-                        <h3 class="portfolio-item__title">Villa Horizon</h3>
-                        <p class="portfolio-item__location">Tanger · Malabata</p>
-                        <div class="portfolio-item__details">
-                            <span>520m²</span>
-                            <span>6 Chambres</span>
-                            <span>Vue Mer</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="portfolio-item reveal" data-category="appartement">
-                    <div class="portfolio-item__image"></div>
-                    <div class="portfolio-item__overlay">
-                        <span class="portfolio-item__category">Penthouse</span>
-                        <h3 class="portfolio-item__title">Sky Residence</h3>
-                        <p class="portfolio-item__location">Rabat · Agdal</p>
-                        <div class="portfolio-item__details">
-                            <span>250m²</span>
-                            <span>4 Chambres</span>
-                            <span>Rooftop</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="portfolio-item reveal" data-category="riad">
-                    <div class="portfolio-item__image"></div>
-                    <div class="portfolio-item__overlay">
-                        <span class="portfolio-item__category">Riad Luxe</span>
-                        <h3 class="portfolio-item__title">Riad Palmeraie</h3>
-                        <p class="portfolio-item__location">Marrakech · Palmeraie</p>
-                        <div class="portfolio-item__details">
-                            <span>400m²</span>
-                            <span>7 Suites</span>
-                            <span>Spa</span>
-                        </div>
-                    </div>
+                <div class="legend">
+                    <span class="status-chip running">running</span>
+                    <span class="status-chip stopped">stopped</span>
+                    <span class="status-chip others">autres états</span>
                 </div>
             </div>
-        </div>
-    </section>
+            <div id="feedback" class="feedback" role="status" aria-live="assertive"></div>
+            <div class="table-wrapper" role="region" aria-label="Liste des instances EC2">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nom</th>
+                            <th>ID</th>
+                            <th>Type</th>
+                            <th>Zone</th>
+                            <th>État</th>
+                            <th>Lancement</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="instancesTableBody">
+                        <tr>
+                            <td colspan="7" class="empty">Initialisez l'accès AWS puis lancez une recherche pour afficher vos instances.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
 
-    <!-- Benefits Section -->
-    <section class="benefits" id="benefits">
-        <div class="container">
-            <div class="section-header section-header--centered">
-                <span class="section-header__label">Pourquoi One Roof</span>
-                <h2 class="section-header__title">L'Excellence à Votre Service</h2>
+    <footer class="app-footer">
+        <div class="container footer-content">
+            <div>
+                <strong>Bonnes pratiques</strong>
+                <ul>
+                    <li>Utilisez des clés IAM temporaires ou des rôles AWS SSO.</li>
+                    <li>Limitez les permissions au strict nécessaire.</li>
+                    <li>Pensez à activer CloudTrail pour historiser les actions.</li>
+                </ul>
             </div>
-            <div class="benefits__grid">
-                <div class="benefit-card reveal">
-                    <div class="benefit-card__icon">
-                        <svg width="56" height="56" viewBox="0 0 56 56" fill="none">
-                            <circle cx="28" cy="28" r="24" stroke="#C9A961" stroke-width="2"/>
-                            <path d="M28 16v12l8 8" stroke="#C9A961" stroke-width="2" stroke-linecap="round"/>
-                        </svg>
-                    </div>
-                    <h3 class="benefit-card__title">Expertise Multigénérationnelle</h3>
-                    <p class="benefit-card__description">
-                        Plus de 40 ans d'expérience familiale dans l'immobilier de prestige marocain, transmise et enrichie à travers trois générations.
-                    </p>
-                </div>
-                <div class="benefit-card reveal">
-                    <div class="benefit-card__icon">
-                        <svg width="56" height="56" viewBox="0 0 56 56" fill="none">
-                            <path d="M16 28l8 8 16-16" stroke="#C9A961" stroke-width="3" stroke-linecap="round"/>
-                            <rect x="8" y="8" width="40" height="40" stroke="#C9A961" stroke-width="2" rx="4"/>
-                        </svg>
-                    </div>
-                    <h3 class="benefit-card__title">Sélection Ultra-Premium</h3>
-                    <p class="benefit-card__description">
-                        Seulement 5% des biens analysés intègrent notre portfolio. Nous privilégions la qualité absolue à la quantité.
-                    </p>
-                </div>
-                <div class="benefit-card reveal">
-                    <div class="benefit-card__icon">
-                        <svg width="56" height="56" viewBox="0 0 56 56" fill="none">
-                            <path d="M28 12v32M16 20l12-8 12 8v24H16V20z" stroke="#C9A961" stroke-width="2"/>
-                        </svg>
-                    </div>
-                    <h3 class="benefit-card__title">Gestion Intégrale</h3>
-                    <p class="benefit-card__description">
-                        Service conciergerie 24/7, maintenance préventive, optimisation fiscale et reporting transparent pour une tranquillité absolue.
-                    </p>
-                </div>
-                <div class="benefit-card reveal">
-                    <div class="benefit-card__icon">
-                        <svg width="56" height="56" viewBox="0 0 56 56" fill="none">
-                            <circle cx="28" cy="20" r="8" stroke="#C9A961" stroke-width="2"/>
-                            <path d="M12 44a16 16 0 0132 0" stroke="#C9A961" stroke-width="2" stroke-linecap="round"/>
-                        </svg>
-                    </div>
-                    <h3 class="benefit-card__title">Approche Personnalisée</h3>
-                    <p class="benefit-card__description">
-                        Chaque client bénéficie d'un accompagnement sur-mesure adapté à ses objectifs patrimoniaux et ses aspirations.
-                    </p>
-                </div>
-            </div>
-            <div class="stats">
-                <div class="stat-item reveal">
-                    <div class="stat-item__number" data-target="40">0</div>
-                    <div class="stat-item__label">Ans d'Expertise</div>
-                </div>
-                <div class="stat-item reveal">
-                    <div class="stat-item__number" data-target="150">0</div>
-                    <div class="stat-item__suffix">+</div>
-                    <div class="stat-item__label">Biens Gérés</div>
-                </div>
-                <div class="stat-item reveal">
-                    <div class="stat-item__number" data-target="98">0</div>
-                    <div class="stat-item__suffix">%</div>
-                    <div class="stat-item__label">Satisfaction Client</div>
-                </div>
-                <div class="stat-item reveal">
-                    <div class="stat-item__number" data-target="12">0</div>
-                    <div class="stat-item__suffix">%</div>
-                    <div class="stat-item__label">Rendement Moyen</div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Contact Section -->
-    <section class="contact" id="contact">
-        <div class="container">
-            <div class="contact__grid">
-                <div class="contact__content reveal">
-                    <div class="section-header">
-                        <span class="section-header__label">Parlons de Votre Projet</span>
-                        <h2 class="section-header__title">Commençons Ensemble</h2>
-                        <p class="section-header__description">
-                            Que vous souhaitiez investir, vendre ou simplement découvrir nos opportunités, notre équipe est à votre écoute.
-                        </p>
-                    </div>
-                    <div class="contact__info">
-                        <div class="contact-item">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" stroke="#C9A961" stroke-width="2"/>
-                            </svg>
-                            <div>
-                                <span class="contact-item__label">Email</span>
-                                <a href="mailto:contact@oneroof.ma" class="contact-item__value">contact@oneroof.ma</a>
-                            </div>
-                        </div>
-                        <div class="contact-item">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z" stroke="#C9A961" stroke-width="2"/>
-                            </svg>
-                            <div>
-                                <span class="contact-item__label">Téléphone</span>
-                                <a href="tel:+212522000000" class="contact-item__value">+212 522 000 000</a>
-                            </div>
-                        </div>
-                        <div class="contact-item">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" stroke="#C9A961" stroke-width="2"/>
-                                <circle cx="12" cy="10" r="3" stroke="#C9A961" stroke-width="2"/>
-                            </svg>
-                            <div>
-                                <span class="contact-item__label">Adresse</span>
-                                <span class="contact-item__value">Casablanca, Maroc</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="contact__map">
-                        <svg viewBox="0 0 400 300" class="morocco-map">
-                            <path d="M50 100 Q80 80 120 90 T200 100 Q250 110 300 90 L320 110 Q300 140 280 160 T220 200 Q180 220 140 210 T80 180 Q60 150 50 120 Z" 
-                                  fill="#FAFAF8" 
-                                  stroke="#C9A961" 
-                                  stroke-width="2"/>
-                            <circle cx="150" cy="140" r="6" fill="#1E3A5F" class="map-marker"/>
-                            <text x="150" y="170" text-anchor="middle" fill="#1E3A5F" font-size="12">Casablanca</text>
-                        </svg>
-                    </div>
-                </div>
-                <div class="contact__form-wrapper reveal">
-                    <form class="contact-form" id="contactForm">
-                        <div class="form-group">
-                            <label for="name" class="form-label">Nom Complet</label>
-                            <input type="text" id="name" name="name" class="form-input" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="email" class="form-label">Email</label>
-                            <input type="email" id="email" name="email" class="form-input" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="phone" class="form-label">Téléphone</label>
-                            <input type="tel" id="phone" name="phone" class="form-input">
-                        </div>
-                        <div class="form-group">
-                            <label for="interest" class="form-label">Votre Intérêt</label>
-                            <select id="interest" name="interest" class="form-input">
-                                <option value="">Sélectionnez une option</option>
-                                <option value="achat">Acquisition de bien</option>
-                                <option value="vente">Vente de bien</option>
-                                <option value="gestion">Gestion locative</option>
-                                <option value="conseil">Conseil patrimonial</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="message" class="form-label">Votre Message</label>
-                            <textarea id="message" name="message" class="form-input" rows="5" required></textarea>
-                        </div>
-                        <button type="submit" class="btn btn--primary btn--full">
-                            Envoyer le Message
-                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                                <path d="M18 2L9 11M18 2l-6 16-3-7-7-3 16-6z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                            </svg>
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <div class="footer__content">
-                <div class="footer__logo">
-                    <svg width="48" height="48" viewBox="0 0 100 100">
-                        <rect x="30" y="20" width="50" height="60" fill="none" stroke="#C9A961" stroke-width="3"/>
-                        <polygon points="30,45 40,35 50,45" fill="#FAFAF8"/>
-                        <polygon points="40,55 50,45 60,55 50,65" fill="#C9A961"/>
-                    </svg>
-                    <span>ONE ROOF</span>
-                </div>
-                <p class="footer__tagline">
-                    Patrimoine familial · Excellence immobilière · Héritage pérenne
-                </p>
-                <div class="footer__socials">
-                    <a href="#" aria-label="LinkedIn" class="social-link">
-                        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                            <path d="M4.5 3A1.5 1.5 0 003 4.5v11A1.5 1.5 0 004.5 17h11a1.5 1.5 0 001.5-1.5v-11A1.5 1.5 0 0015.5 3h-11zM7 8v6H5V8h2zm.2-2.5c0 .6-.4 1-1.1 1s-1.1-.4-1.1-1 .4-1 1.1-1 1.1.4 1.1 1zM15 14h-2v-3c0-.8-.3-1.3-1-1.3-.5 0-.8.3-.9.7v3.6h-2V8h2v.8c.3-.4.8-.8 1.7-.8 1.2 0 2.2.8 2.2 2.5V14z"/>
-                        </svg>
-                    </a>
-                    <a href="#" aria-label="Instagram" class="social-link">
-                        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                            <rect x="2" y="2" width="16" height="16" rx="4"/>
-                            <circle cx="10" cy="10" r="3" fill="#1E3A5F"/>
-                            <circle cx="15" cy="5" r="1" fill="#1E3A5F"/>
-                        </svg>
-                    </a>
-                </div>
-            </div>
-            <div class="footer__bottom">
-                <p>&copy; 2025 One Roof. Tous droits réservés.</p>
-                <div class="footer__links">
-                    <a href="#">Mentions Légales</a>
-                    <a href="#">Confidentialité</a>
-                </div>
+            <div class="footer-links">
+                <a href="https://docs.aws.amazon.com/fr_fr/sdk-for-javascript/v2/developer-guide/" target="_blank" rel="noopener">Documentation SDK</a>
+                <a href="https://console.aws.amazon.com/ec2/" target="_blank" rel="noopener">Console AWS</a>
             </div>
         </div>
     </footer>
 
+    <dialog id="helpDialog" aria-modal="true">
+        <form method="dialog">
+            <h2>Guide rapide</h2>
+            <ol>
+                <li>Renseignez vos identifiants IAM et cliquez sur « Initialiser le SDK ».</li>
+                <li>Définissez un filtre (ID ou tags) et lancez la recherche.</li>
+                <li>Utilisez les boutons <em>Start</em> ou <em>Stop</em>. Le statut se met à jour automatiquement.</li>
+            </ol>
+            <p class="note">Fermez ce guide avec <kbd>Échap</kbd> ou le bouton ci-dessous.</p>
+            <button value="close" class="primary">Fermer</button>
+        </form>
+    </dialog>
+
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1360.0.min.js" integrity="sha384-wZLwY0n1sSXX249oM2Zk4I5haX4YSCl8VQUC71aiGIHO2aeMBhYnQuoT0c8/tHrh" crossorigin="anonymous"></script>
     <script src="script.js"></script>
 </body>
 </html>
