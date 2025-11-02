@@ -1,244 +1,335 @@
-# ONE ROOF - Site Web Immobilier de Luxe
+# EC2 Instance Manager
 
-Site web one-page luxueux et sobre pour One Roof, entreprise marocaine d'investissement immobilier familiale spécialisée dans l'acquisition et la location de biens immobiliers premium.
+Application web moderne pour gérer les instances EC2 AWS. Permet de démarrer, arrêter et redémarrer facilement vos instances EC2 depuis une interface intuitive.
 
-## 🎨 Caractéristiques Principales
+## 🚀 Fonctionnalités
 
-### Design & Esthétique
-- **Style**: Luxe contemporain minimaliste avec élégance méditerranéenne
-- **Palette de couleurs**:
-  - Navy Blue (#1E3A5F) - Couleur principale
-  - Or (#C9A961) - Accents premium
-  - Blanc cassé (#FAFAF8) - Fond élégant
-- **Typographie**:
-  - Titres: Cormorant Garamond (Serif élégante)
-  - Corps: Inter (Sans-serif moderne)
-- **Layout**: Asymétrique avec espaces respirants, ratio d'or
+- ✅ **Liste des instances EC2** : Visualisez toutes vos instances avec leurs détails
+- 🟢 **Démarrer** : Démarrez des instances arrêtées
+- 🔴 **Arrêter** : Arrêtez des instances en cours d'exécution
+- 🔄 **Redémarrer** : Redémarrez des instances actives
+- 📊 **Statistiques** : Vue d'ensemble avec compteurs d'instances par état
+- 🎨 **Interface moderne** : Design responsive et intuitif
+- ⚙️ **Configuration flexible** : Support pour credentials AWS ou backend API
 
-### Sections
-1. **Hero** - Section d'accueil plein écran avec effet parallax subtil
-2. **À Propos** - Storytelling familial avec valeurs d'excellence et confiance
-3. **Approche** - Processus d'investissement en 4 étapes visuelles
-4. **Portfolio** - Grille de propriétés avec filtres élégants et effets hover
-5. **Avantages** - Icônes personnalisées et statistiques animées
-6. **Contact** - Formulaire épuré avec carte du Maroc interactive
+## 📋 Prérequis
 
-### Animations & Interactions
-- ✨ Scroll reveal progressif avec effet de décalage
-- 🎭 Parallax multi-couches sur hero et sections clés
-- 🎯 États hover sophistiqués (transitions 300-400ms)
-- 🔄 Micro-interactions sur CTA et éléments interactifs
-- 📊 Animations de compteurs pour statistiques
-- 🖱️ Smooth scroll avec indicateur de progression
+- Un compte AWS avec des instances EC2
+- Des credentials AWS (Access Key ID et Secret Access Key) avec les permissions appropriées
+- Un navigateur web moderne (Chrome, Firefox, Safari, Edge)
 
-### Caractéristiques Techniques
-- 📱 **Responsive Design**: Mobile-first (breakpoints: 375px, 768px, 1440px)
-- 🎨 **Design System**: Variables CSS pour cohérence
-- ⚡ **Performance Optimisée**: 
-  - Lazy loading images
-  - Code splitting
-  - Animations GPU-accelerated (transform, opacity)
-- ♿ **Accessibilité**: WCAG 2.1 AA minimum
-- 🎯 **Navigation**: 
-  - Menu sticky avec backdrop blur
-  - Barre de progression de scroll
-  - Menu mobile responsive
+## 🔐 Permissions AWS requises
 
-## 🚀 Installation
+Votre utilisateur AWS/IAM doit avoir les permissions suivantes :
 
-### Prérequis
-Aucun! Le site utilise uniquement HTML, CSS et JavaScript vanilla.
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "ec2:DescribeInstances",
+                "ec2:StartInstances",
+                "ec2:StopInstances",
+                "ec2:RebootInstances"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
+```
 
-### Utilisation Locale
+## 🛠️ Installation
+
 1. Clonez ou téléchargez le repository
-2. Ouvrez `index.html` dans votre navigateur
+2. Ouvrez `index.html` dans votre navigateur web
 
 ```bash
 # Option 1: Ouvrir directement
 open index.html
 
-# Option 2: Serveur local simple (Python)
+# Option 2: Utiliser un serveur local (recommandé)
 python -m http.server 8000
+# Puis ouvrez http://localhost:8000 dans votre navigateur
 
-# Option 3: Serveur local (Node.js)
+# Option 3: Avec Node.js
 npx serve
 ```
 
-## 📁 Structure du Projet
+## ⚙️ Configuration
+
+### Option 1: Configuration avec credentials AWS (Frontend uniquement - NON RECOMMANDÉ pour la production)
+
+⚠️ **ATTENTION** : Stocker les credentials AWS dans le localStorage du navigateur n'est **PAS SÉCURISÉ** pour la production. Cette méthode est uniquement recommandée pour le développement et les tests.
+
+1. Ouvrez l'application
+2. Cliquez sur "Configuration"
+3. Entrez vos credentials AWS :
+   - **Access Key ID** : Votre clé d'accès AWS
+   - **Secret Access Key** : Votre clé secrète AWS
+   - **Région** : Sélectionnez la région AWS (ex: us-east-1, eu-west-1)
+4. Cliquez sur "Enregistrer"
+
+### Option 2: Configuration avec Backend API (RECOMMANDÉ pour la production)
+
+Pour une utilisation en production, il est **fortement recommandé** d'utiliser un backend API qui gère les credentials AWS de manière sécurisée.
+
+1. Configurez votre backend API (voir section Backend API ci-dessous)
+2. Ouvrez l'application
+3. Cliquez sur "Configuration"
+4. Entrez l'URL de votre endpoint API dans le champ "Endpoint API"
+5. Laissez les champs Access Key ID et Secret Access Key vides
+6. Sélectionnez la région AWS
+7. Cliquez sur "Enregistrer"
+
+## 🔌 Backend API
+
+L'application peut fonctionner avec un backend API pour une sécurité maximale. Voici la structure API attendue :
+
+### Endpoints requis
+
+#### 1. GET `/instances`
+Récupère la liste des instances EC2.
+
+**Headers:**
+- `X-Region`: Région AWS (ex: `us-east-1`)
+
+**Response:**
+```json
+[
+    {
+        "InstanceId": "i-1234567890abcdef0",
+        "InstanceType": "t2.micro",
+        "State": {
+            "Name": "running",
+            "Code": 16
+        },
+        "LaunchTime": "2024-01-15T10:30:00Z",
+        "Tags": [
+            {
+                "Key": "Name",
+                "Value": "Web Server"
+            }
+        ],
+        "PublicIpAddress": "203.0.113.1",
+        "PrivateIpAddress": "10.0.1.10"
+    }
+]
+```
+
+#### 2. POST `/instances/{instanceId}/start`
+Démarre une instance EC2.
+
+**Headers:**
+- `X-Region`: Région AWS
+
+**Response:**
+```json
+{
+    "success": true,
+    "message": "Instance démarrée avec succès"
+}
+```
+
+#### 3. POST `/instances/{instanceId}/stop`
+Arrête une instance EC2.
+
+**Headers:**
+- `X-Region`: Région AWS
+
+**Response:**
+```json
+{
+    "success": true,
+    "message": "Instance arrêtée avec succès"
+}
+```
+
+#### 4. POST `/instances/{instanceId}/reboot`
+Redémarre une instance EC2.
+
+**Headers:**
+- `X-Region`: Région AWS
+
+**Response:**
+```json
+{
+    "success": true,
+    "message": "Instance redémarrée avec succès"
+}
+```
+
+### Exemple de backend avec AWS Lambda + API Gateway
+
+Voici un exemple de fonction Lambda Node.js pour gérer les instances :
+
+```javascript
+const AWS = require('aws-sdk');
+
+exports.handler = async (event) => {
+    const ec2 = new AWS.EC2({
+        region: event.headers['X-Region'] || 'us-east-1'
+    });
+    
+    const { httpMethod, path, pathParameters } = event;
+    
+    if (httpMethod === 'GET' && path === '/instances') {
+        const data = await ec2.describeInstances().promise();
+        const instances = data.Reservations.flatMap(r => r.Instances);
+        
+        return {
+            statusCode: 200,
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            body: JSON.stringify(instances.map(formatInstance))
+        };
+    }
+    
+    if (httpMethod === 'POST' && pathParameters) {
+        const { instanceId } = pathParameters;
+        const action = path.split('/').pop();
+        
+        let result;
+        switch(action) {
+            case 'start':
+                result = await ec2.startInstances({ InstanceIds: [instanceId] }).promise();
+                break;
+            case 'stop':
+                result = await ec2.stopInstances({ InstanceIds: [instanceId] }).promise();
+                break;
+            case 'reboot':
+                result = await ec2.rebootInstances({ InstanceIds: [instanceId] }).promise();
+                break;
+        }
+        
+        return {
+            statusCode: 200,
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            body: JSON.stringify({ success: true })
+        };
+    }
+};
+
+function formatInstance(instance) {
+    return {
+        InstanceId: instance.InstanceId,
+        InstanceType: instance.InstanceType,
+        State: instance.State,
+        LaunchTime: instance.LaunchTime,
+        Tags: instance.Tags || [],
+        PublicIpAddress: instance.PublicIpAddress,
+        PrivateIpAddress: instance.PrivateIpAddress
+    };
+}
+```
+
+## 📁 Structure du projet
 
 ```
 /workspace/
-├── index.html          # Structure HTML principale
-├── styles.css          # Tous les styles et animations
-├── script.js           # Interactions et animations JavaScript
-└── README.md          # Documentation
+├── index.html      # Interface HTML principale
+├── script.js       # Logique JavaScript
+├── styles.css      # Styles CSS
+└── README.md       # Documentation
 ```
 
-## 🎯 Fonctionnalités JavaScript
+## 🎨 Interface utilisateur
 
-### Navigation
-- Menu sticky avec effet blur au scroll
-- Barre de progression de lecture
-- Menu mobile hamburger avec animation
-- Navigation smooth scroll
+L'application offre une interface moderne avec :
 
-### Animations
-- **Scroll Reveal**: Apparition progressive des éléments au scroll
-- **Parallax**: Effet de profondeur sur la section hero
-- **Compteurs Animés**: Animation des statistiques
-- **Filtres Portfolio**: Filtrage animé des propriétés
+- **Header** : Titre et boutons d'action (Actualiser, Configuration)
+- **Statistiques** : Compteurs d'instances par état (Running, Stopped, Pending)
+- **Cartes d'instances** : Affichage détaillé de chaque instance avec :
+  - Nom et ID de l'instance
+  - Type d'instance
+  - État actuel
+  - Adresses IP (publique et privée)
+  - Date de lancement
+  - Tags
+  - Boutons d'action contextuels
 
-### Interactions
-- Effets hover avancés sur les cartes
-- Effet ripple sur les boutons
-- Gestion de formulaire avec feedback visuel
-- Accessibilité clavier complète
+## 🔒 Sécurité
 
-## 🎨 Personnalisation
+### ⚠️ IMPORTANT - Recommandations de sécurité
 
-### Couleurs
-Modifiez les variables CSS dans `:root` (styles.css):
-```css
-:root {
-  --color-navy: #1E3A5F;
-  --color-gold: #C9A961;
-  --color-cream: #FAFAF8;
-}
+1. **Ne jamais exposer les credentials AWS dans le frontend en production**
+   - Utilisez toujours un backend API pour gérer les credentials
+   - Stockez les credentials AWS dans des variables d'environnement sécurisées
+
+2. **Utilisez des rôles IAM avec le principe du moindre privilège**
+   - Accordez uniquement les permissions nécessaires
+   - Limitez les permissions à des ressources spécifiques si possible
+
+3. **Activez MFA (Multi-Factor Authentication)**
+   - Protégez votre compte AWS avec MFA
+
+4. **Utilisez HTTPS**
+   - Ne déployez jamais l'application sur HTTP en production
+
+5. **Implémentez l'authentification**
+   - Ajoutez une authentification utilisateur avant d'accéder à l'application
+
+## 🐛 Dépannage
+
+### Les instances ne s'affichent pas
+
+- Vérifiez que vos credentials AWS sont corrects
+- Vérifiez que votre utilisateur IAM a les permissions nécessaires
+- Vérifiez que vous avez sélectionné la bonne région AWS
+- Ouvrez la console du navigateur (F12) pour voir les erreurs détaillées
+
+### Les actions (start/stop/reboot) ne fonctionnent pas
+
+- Vérifiez les permissions IAM pour les actions EC2
+- Vérifiez que l'instance n'est pas dans un état transitoire
+- Vérifiez les logs de la console du navigateur
+
+### Erreur CORS
+
+Si vous utilisez un backend API, assurez-vous que votre serveur inclut les headers CORS appropriés :
+
+```
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: GET, POST, OPTIONS
+Access-Control-Allow-Headers: Content-Type, X-Region
 ```
 
-### Typographie
-Changez les polices dans les imports Google Fonts (index.html) et les variables CSS:
-```css
-:root {
-  --font-serif: 'Cormorant Garamond', serif;
-  --font-sans: 'Inter', sans-serif;
-}
-```
+## 📝 Notes de développement
 
-### Espacement
-Système basé sur le ratio d'or:
-```css
-:root {
-  --space-xs: 0.5rem;
-  --space-sm: 0.809rem;
-  --space-md: 1.309rem;
-  --space-lg: 2.118rem;
-  --space-xl: 3.427rem;
-  --space-2xl: 5.545rem;
-  --space-3xl: 8.972rem;
-}
-```
+### Mode démo
 
-## 📱 Responsive Breakpoints
+L'application inclut des données mockées pour la démonstration lorsque aucun backend API n'est configuré. Ces données sont utilisées uniquement à des fins de test et ne représentent pas de vraies instances EC2.
 
-- **Mobile**: < 768px
-- **Tablet**: 768px - 1024px
-- **Desktop**: > 1024px
-- **Small Mobile**: < 375px
+### Support des navigateurs
 
-## ♿ Accessibilité
+- Chrome (dernière version)
+- Firefox (dernière version)
+- Safari (dernière version)
+- Edge (dernière version)
 
-- Navigation au clavier complète
-- Focus visible pour tous les éléments interactifs
-- Attributs ARIA appropriés
-- Support de `prefers-reduced-motion`
-- Contraste des couleurs WCAG AA
-- Structure sémantique HTML5
+## 📄 Licence
 
-## 🔧 Optimisations Performances
-
-- Variables CSS pour réutilisation
-- Animations GPU-accelerated
-- Debounce sur événements scroll
-- Intersection Observer pour animations
-- Lazy loading des images
-- Code minifiable et compressible
-
-## 📝 Contenu Portfolio
-
-Le portfolio inclut 6 propriétés exemple:
-- **Villas**: Villa Azur (Casablanca), Villa Horizon (Tanger)
-- **Appartements**: Résidence Atlas (Marrakech), Sky Residence (Rabat)
-- **Riads**: Riad Sérénité (Fès), Riad Palmeraie (Marrakech)
-
-Pour ajouter des biens, dupliquez la structure `.portfolio-item` dans index.html.
-
-## 🎭 Animations Personnalisées
-
-### Fade In Up
-```css
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-```
-
-### Pulse (Marqueur carte)
-```css
-@keyframes pulse {
-  0%, 100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.2);
-    opacity: 0.8;
-  }
-}
-```
-
-## 🌐 Navigateurs Supportés
-
-- Chrome/Edge (dernières versions)
-- Firefox (dernières versions)
-- Safari (dernières versions)
-- Opera (dernières versions)
-
-## 📧 Formulaire de Contact
-
-Le formulaire est fonctionnel côté frontend avec validation. Pour l'intégrer à un backend:
-
-1. Ajoutez l'attribut `action` au formulaire
-2. Configurez l'endpoint de votre backend
-3. Ou intégrez un service comme Formspree, Netlify Forms, ou EmailJS
-
-## 🚀 Déploiement
-
-### Netlify
-```bash
-# Déployez directement depuis Git
-netlify deploy --prod
-```
-
-### Vercel
-```bash
-# Déployez avec Vercel CLI
-vercel --prod
-```
-
-### GitHub Pages
-1. Poussez le code sur GitHub
-2. Activez GitHub Pages dans les paramètres
-3. Sélectionnez la branche main
-
-## 📄 License
-
-Ce projet est créé pour One Roof. Tous droits réservés.
+Ce projet est fourni tel quel sans garantie. Utilisez-le à vos propres risques.
 
 ## 🤝 Contribution
 
-Pour toute amélioration ou suggestion:
-1. Créez une issue détaillée
-2. Proposez une pull request
-3. Suivez les conventions de code existantes
+Les contributions sont les bienvenues ! N'hésitez pas à :
+- Signaler des bugs
+- Proposer des améliorations
+- Soumettre des pull requests
+
+## 📚 Ressources
+
+- [Documentation AWS EC2](https://docs.aws.amazon.com/ec2/)
+- [AWS SDK JavaScript](https://docs.aws.amazon.com/sdk-for-javascript/)
+- [IAM Best Practices](https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html)
 
 ---
 
-**Développé avec ❤️ pour One Roof**  
-*Patrimoine Familial · Excellence Immobilière · Héritage Pérenne*
+**Développé avec ❤️ pour la gestion simplifiée des instances EC2**

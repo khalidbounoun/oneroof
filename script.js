@@ -1,481 +1,452 @@
 /**
- * ONE ROOF - Luxury Real Estate Website
- * Interactive Features & Animations
+ * EC2 Instance Manager
+ * Application web pour gérer les instances EC2 AWS
  */
 
-// ============================================
-// NAVIGATION
-// ============================================
+// Configuration AWS
+let awsConfig = {
+    accessKeyId: localStorage.getItem('aws_access_key_id') || '',
+    secretAccessKey: localStorage.getItem('aws_secret_access_key') || '',
+    region: localStorage.getItem('aws_region') || 'us-east-1',
+    apiEndpoint: localStorage.getItem('aws_api_endpoint') || ''
+};
 
-const nav = document.getElementById('nav');
-const navToggle = document.getElementById('navToggle');
-const navMenu = document.getElementById('navMenu');
-const progressBar = document.getElementById('progressBar');
+// État de l'application
+let instances = [];
 
-// Sticky Navigation on Scroll
-let lastScrollTop = 0;
-window.addEventListener('scroll', () => {
-  const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-  
-  // Add scrolled class for background
-  if (scrollTop > 50) {
-    nav.classList.add('scrolled');
-  } else {
-    nav.classList.remove('scrolled');
-  }
-  
-  // Update progress bar
-  const windowHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-  const scrolled = (scrollTop / windowHeight) * 100;
-  progressBar.style.width = scrolled + '%';
-  
-  lastScrollTop = scrollTop;
+// Initialisation
+document.addEventListener('DOMContentLoaded', () => {
+    initializeApp();
 });
 
-// Mobile Menu Toggle
-navToggle.addEventListener('click', () => {
-  navToggle.classList.toggle('active');
-  navMenu.classList.toggle('active');
-  document.body.style.overflow = navMenu.classList.contains('active') ? 'hidden' : '';
-});
-
-// Close mobile menu on link click
-document.querySelectorAll('.nav__link').forEach(link => {
-  link.addEventListener('click', () => {
-    navToggle.classList.remove('active');
-    navMenu.classList.remove('active');
-    document.body.style.overflow = '';
-  });
-});
-
-// ============================================
-// PARALLAX EFFECT - HERO
-// ============================================
-
-const hero = document.querySelector('.hero');
-const heroLayers = document.querySelectorAll('.hero__layer');
-
-window.addEventListener('scroll', () => {
-  if (!hero) return;
-  
-  const scrolled = window.pageYOffset;
-  const heroHeight = hero.offsetHeight;
-  
-  if (scrolled < heroHeight) {
-    heroLayers.forEach((layer, index) => {
-      const speed = (index + 1) * 0.15;
-      const yPos = -(scrolled * speed);
-      layer.style.transform = `translate3d(0, ${yPos}px, 0)`;
-    });
-  }
-});
-
-// ============================================
-// SCROLL REVEAL ANIMATION
-// ============================================
-
-const revealElements = document.querySelectorAll('.reveal');
-
-const revealObserver = new IntersectionObserver((entries) => {
-  entries.forEach((entry, index) => {
-    if (entry.isIntersecting) {
-      // Stagger effect
-      setTimeout(() => {
-        entry.target.classList.add('active');
-      }, index * 100);
-      
-      revealObserver.unobserve(entry.target);
-    }
-  });
-}, {
-  threshold: 0.15,
-  rootMargin: '0px 0px -50px 0px'
-});
-
-revealElements.forEach(element => {
-  revealObserver.observe(element);
-});
-
-// ============================================
-// PORTFOLIO FILTERS
-// ============================================
-
-const filterButtons = document.querySelectorAll('.filter-btn');
-const portfolioItems = document.querySelectorAll('.portfolio-item');
-
-filterButtons.forEach(button => {
-  button.addEventListener('click', () => {
-    // Update active button
-    filterButtons.forEach(btn => btn.classList.remove('active'));
-    button.classList.add('active');
+function initializeApp() {
+    // Charger la configuration sauvegardée
+    loadConfig();
     
-    const filterValue = button.getAttribute('data-filter');
+    // Écouteurs d'événements
+    document.getElementById('refreshBtn').addEventListener('click', loadInstances);
+    document.getElementById('configBtn').addEventListener('click', openConfigModal);
+    document.getElementById('configForm').addEventListener('submit', saveConfig);
     
-    // Filter items with animation
-    portfolioItems.forEach((item, index) => {
-      const category = item.getAttribute('data-category');
-      
-      if (filterValue === 'all' || category === filterValue) {
-        setTimeout(() => {
-          item.classList.remove('hidden');
-          item.style.animation = 'fadeInUp 0.6s ease-out forwards';
-        }, index * 50);
-      } else {
-        item.classList.add('hidden');
-      }
-    });
-  });
-});
-
-// ============================================
-// ANIMATED COUNTERS
-// ============================================
-
-const statNumbers = document.querySelectorAll('.stat-item__number');
-let countersAnimated = false;
-
-const animateCounter = (element) => {
-  const target = parseInt(element.getAttribute('data-target'));
-  const duration = 2000; // 2 seconds
-  const increment = target / (duration / 16); // 60fps
-  let current = 0;
-  
-  const updateCounter = () => {
-    current += increment;
-    
-    if (current < target) {
-      element.textContent = Math.floor(current);
-      requestAnimationFrame(updateCounter);
+    // Charger les instances au démarrage
+    if (awsConfig.accessKeyId && awsConfig.secretAccessKey) {
+        loadInstances();
     } else {
-      element.textContent = target;
+        showConfigModal();
     }
-  };
-  
-  updateCounter();
-};
-
-// Observe stats section
-const statsObserver = new IntersectionObserver((entries) => {
-  entries.forEach(entry => {
-    if (entry.isIntersecting && !countersAnimated) {
-      countersAnimated = true;
-      
-      statNumbers.forEach((stat, index) => {
-        setTimeout(() => {
-          animateCounter(stat);
-        }, index * 150);
-      });
-      
-      statsObserver.unobserve(entry.target);
-    }
-  });
-}, {
-  threshold: 0.5
-});
-
-const statsSection = document.querySelector('.stats');
-if (statsSection) {
-  statsObserver.observe(statsSection);
 }
 
-// ============================================
-// SMOOTH SCROLL
-// ============================================
+// Charger la configuration depuis localStorage
+function loadConfig() {
+    const accessKeyId = document.getElementById('accessKeyId');
+    const secretAccessKey = document.getElementById('secretAccessKey');
+    const region = document.getElementById('region');
+    const apiEndpoint = document.getElementById('apiEndpoint');
+    
+    if (accessKeyId) accessKeyId.value = awsConfig.accessKeyId;
+    if (secretAccessKey) secretAccessKey.value = awsConfig.secretAccessKey ? '••••••••••••••••' : '';
+    if (region) region.value = awsConfig.region;
+    if (apiEndpoint) apiEndpoint.value = awsConfig.apiEndpoint;
+}
 
-document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-  anchor.addEventListener('click', function (e) {
+// Sauvegarder la configuration
+function saveConfig(e) {
     e.preventDefault();
     
-    const targetId = this.getAttribute('href');
-    if (targetId === '#') return;
+    const formData = new FormData(e.target);
     
-    const targetElement = document.querySelector(targetId);
+    awsConfig.accessKeyId = formData.get('accessKeyId');
+    awsConfig.secretAccessKey = formData.get('secretAccessKey');
+    awsConfig.region = formData.get('region');
+    awsConfig.apiEndpoint = formData.get('apiEndpoint');
     
-    if (targetElement) {
-      const navHeight = nav.offsetHeight;
-      const targetPosition = targetElement.getBoundingClientRect().top + window.pageYOffset - navHeight;
-      
-      window.scrollTo({
-        top: targetPosition,
-        behavior: 'smooth'
-      });
+    // Sauvegarder dans localStorage
+    localStorage.setItem('aws_access_key_id', awsConfig.accessKeyId);
+    localStorage.setItem('aws_secret_access_key', awsConfig.secretAccessKey);
+    localStorage.setItem('aws_region', awsConfig.region);
+    localStorage.setItem('aws_api_endpoint', awsConfig.apiEndpoint);
+    
+    closeConfigModal();
+    loadInstances();
+}
+
+// Modals
+function openConfigModal() {
+    document.getElementById('configModal').style.display = 'flex';
+    // Ne pas afficher le secret en clair
+    const secretInput = document.getElementById('secretAccessKey');
+    if (secretInput.value === '••••••••••••••••') {
+        secretInput.value = '';
     }
-  });
-});
+}
 
-// ============================================
-// FORM HANDLING
-// ============================================
+function closeConfigModal() {
+    document.getElementById('configModal').style.display = 'none';
+}
 
-const contactForm = document.getElementById('contactForm');
+// Charger les instances EC2
+async function loadInstances() {
+    showLoading();
+    
+    try {
+        if (awsConfig.apiEndpoint) {
+            // Utiliser un backend proxy
+            instances = await fetchInstancesFromAPI();
+        } else {
+            // Utiliser AWS SDK directement (nécessite un backend pour la sécurité)
+            // Pour cette démo, on utilise des données mockées
+            // En production, il faudrait un backend sécurisé
+            instances = await fetchInstancesDirect();
+        }
+        
+        if (instances.length === 0) {
+            showEmpty();
+        } else {
+            displayInstances(instances);
+            updateStats(instances);
+        }
+    } catch (error) {
+        console.error('Erreur lors du chargement des instances:', error);
+        showError(error.message || 'Impossible de charger les instances EC2');
+    }
+}
 
-if (contactForm) {
-  contactForm.addEventListener('submit', (e) => {
-    e.preventDefault();
+// Charger les instances depuis un backend API
+async function fetchInstancesFromAPI() {
+    const response = await fetch(`${awsConfig.apiEndpoint}/instances`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Region': awsConfig.region
+        }
+    });
     
-    // Get form data
-    const formData = new FormData(contactForm);
-    const data = Object.fromEntries(formData);
+    if (!response.ok) {
+        throw new Error(`Erreur API: ${response.statusText}`);
+    }
     
-    // Simulate form submission
-    console.log('Form submitted:', data);
+    return await response.json();
+}
+
+// Charger les instances directement (mock pour démo)
+async function fetchInstancesDirect() {
+    // Note: En production, cela devrait être fait via un backend sécurisé
+    // car exposer les credentials AWS dans le frontend est une faille de sécurité
     
-    // Show success message
-    const button = contactForm.querySelector('button[type="submit"]');
-    const originalText = button.innerHTML;
+    // Simulation d'un délai réseau
+    await new Promise(resolve => setTimeout(resolve, 1000));
     
-    button.innerHTML = `
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-        <path d="M4 10l4 4 8-8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-      </svg>
-      Message Envoyé !
+    // Données mockées pour la démonstration
+    // En production, remplacer par un appel AWS SDK depuis un backend
+    return [
+        {
+            InstanceId: 'i-1234567890abcdef0',
+            InstanceType: 't2.micro',
+            State: { Name: 'running', Code: 16 },
+            LaunchTime: new Date(Date.now() - 86400000).toISOString(),
+            Tags: [
+                { Key: 'Name', Value: 'Web Server' },
+                { Key: 'Environment', Value: 'Production' }
+            ],
+            PublicIpAddress: '203.0.113.1',
+            PrivateIpAddress: '10.0.1.10'
+        },
+        {
+            InstanceId: 'i-0987654321fedcba0',
+            InstanceType: 't3.small',
+            State: { Name: 'stopped', Code: 80 },
+            LaunchTime: new Date(Date.now() - 259200000).toISOString(),
+            Tags: [
+                { Key: 'Name', Value: 'Database Server' },
+                { Key: 'Environment', Value: 'Development' }
+            ],
+            PublicIpAddress: null,
+            PrivateIpAddress: '10.0.1.11'
+        },
+        {
+            InstanceId: 'i-abcdef1234567890',
+            InstanceType: 't2.medium',
+            State: { Name: 'pending', Code: 0 },
+            LaunchTime: new Date().toISOString(),
+            Tags: [
+                { Key: 'Name', Value: 'Backup Server' },
+                { Key: 'Environment', Value: 'Production' }
+            ],
+            PublicIpAddress: null,
+            PrivateIpAddress: null
+        }
+    ];
+}
+
+// Afficher les instances
+function displayInstances(instancesList) {
+    const grid = document.getElementById('instancesGrid');
+    grid.innerHTML = '';
+    
+    instancesList.forEach(instance => {
+        const card = createInstanceCard(instance);
+        grid.appendChild(card);
+    });
+    
+    showInstances();
+}
+
+// Créer une carte d'instance
+function createInstanceCard(instance) {
+    const card = document.createElement('div');
+    card.className = `instance-card instance-card--${instance.State.Name}`;
+    
+    const name = getTagValue(instance.Tags, 'Name') || instance.InstanceId;
+    const state = instance.State.Name;
+    const stateLabel = getStateLabel(state);
+    
+    card.innerHTML = `
+        <div class="instance-card__header">
+            <div class="instance-card__title">
+                <h3>${name}</h3>
+                <span class="instance-id">${instance.InstanceId}</span>
+            </div>
+            <div class="instance-card__state state-badge state-badge--${state}">
+                ${stateLabel}
+            </div>
+        </div>
+        
+        <div class="instance-card__body">
+            <div class="instance-info">
+                <div class="info-item">
+                    <span class="info-label">Type:</span>
+                    <span class="info-value">${instance.InstanceType}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">État:</span>
+                    <span class="info-value">${stateLabel}</span>
+                </div>
+                ${instance.PublicIpAddress ? `
+                <div class="info-item">
+                    <span class="info-label">IP Publique:</span>
+                    <span class="info-value">${instance.PublicIpAddress}</span>
+                </div>
+                ` : ''}
+                ${instance.PrivateIpAddress ? `
+                <div class="info-item">
+                    <span class="info-label">IP Privée:</span>
+                    <span class="info-value">${instance.PrivateIpAddress}</span>
+                </div>
+                ` : ''}
+                <div class="info-item">
+                    <span class="info-label">Lancée:</span>
+                    <span class="info-value">${formatDate(instance.LaunchTime)}</span>
+                </div>
+            </div>
+            
+            ${instance.Tags && instance.Tags.length > 0 ? `
+            <div class="instance-tags">
+                ${instance.Tags.map(tag => `
+                    <span class="tag">${tag.Key}: ${tag.Value}</span>
+                `).join('')}
+            </div>
+            ` : ''}
+        </div>
+        
+        <div class="instance-card__actions">
+            ${state === 'stopped' || state === 'stopping' ? `
+            <button class="btn btn--success btn--small" onclick="startInstance('${instance.InstanceId}')" 
+                    ${state === 'stopping' ? 'disabled' : ''}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="5 3 19 12 5 21 5 3"/>
+                </svg>
+                Démarrer
+            </button>
+            ` : ''}
+            ${state === 'running' || state === 'pending' ? `
+            <button class="btn btn--danger btn--small" onclick="stopInstance('${instance.InstanceId}')"
+                    ${state === 'pending' ? 'disabled' : ''}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="6" y="6" width="12" height="12"/>
+                </svg>
+                Arrêter
+            </button>
+            ` : ''}
+            ${state === 'running' ? `
+            <button class="btn btn--warning btn--small" onclick="rebootInstance('${instance.InstanceId}')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                    <path d="M21 3v5h-5"/>
+                    <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+                    <path d="M3 21v-5h5"/>
+                </svg>
+                Redémarrer
+            </button>
+            ` : ''}
+        </div>
     `;
-    button.disabled = true;
     
-    // Reset after 3 seconds
-    setTimeout(() => {
-      button.innerHTML = originalText;
-      button.disabled = false;
-      contactForm.reset();
-    }, 3000);
-  });
-  
-  // Form input animations
-  const formInputs = contactForm.querySelectorAll('.form-input');
-  
-  formInputs.forEach(input => {
-    input.addEventListener('focus', () => {
-      input.parentElement.classList.add('focused');
-    });
-    
-    input.addEventListener('blur', () => {
-      if (!input.value) {
-        input.parentElement.classList.remove('focused');
-      }
-    });
-  });
+    return card;
 }
 
-// ============================================
-// INTERSECTION OBSERVER FOR SECTIONS
-// ============================================
-
-// Add active class to nav links based on scroll position
-const sections = document.querySelectorAll('section[id]');
-
-const sectionObserver = new IntersectionObserver((entries) => {
-  entries.forEach(entry => {
-    if (entry.isIntersecting) {
-      const id = entry.target.getAttribute('id');
-      
-      // Remove active class from all nav links
-      document.querySelectorAll('.nav__link').forEach(link => {
-        link.classList.remove('active');
-      });
-      
-      // Add active class to current nav link
-      const activeLink = document.querySelector(`.nav__link[href="#${id}"]`);
-      if (activeLink) {
-        activeLink.classList.add('active');
-      }
+// Démarrer une instance
+async function startInstance(instanceId) {
+    if (!confirm(`Êtes-vous sûr de vouloir démarrer l'instance ${instanceId}?`)) {
+        return;
     }
-  });
-}, {
-  threshold: 0.3
-});
-
-sections.forEach(section => {
-  sectionObserver.observe(section);
-});
-
-// ============================================
-// PERFORMANCE OPTIMIZATIONS
-// ============================================
-
-// Lazy load images (if using actual images)
-if ('loading' in HTMLImageElement.prototype) {
-  const images = document.querySelectorAll('img[loading="lazy"]');
-  images.forEach(img => {
-    img.src = img.dataset.src;
-  });
-} else {
-  // Fallback for browsers that don't support lazy loading
-  const script = document.createElement('script');
-  script.src = 'https://cdnjs.cloudflare.com/ajax/libs/lazysizes/5.3.2/lazysizes.min.js';
-  document.body.appendChild(script);
+    
+    try {
+        await executeInstanceAction(instanceId, 'start');
+        showNotification(`Instance ${instanceId} en cours de démarrage...`, 'success');
+        setTimeout(loadInstances, 2000);
+    } catch (error) {
+        showNotification(`Erreur: ${error.message}`, 'error');
+    }
 }
 
-// Debounce function for scroll events
-function debounce(func, wait = 10, immediate = false) {
-  let timeout;
-  return function() {
-    const context = this;
-    const args = arguments;
-    const later = function() {
-      timeout = null;
-      if (!immediate) func.apply(context, args);
+// Arrêter une instance
+async function stopInstance(instanceId) {
+    if (!confirm(`Êtes-vous sûr de vouloir arrêter l'instance ${instanceId}?`)) {
+        return;
+    }
+    
+    try {
+        await executeInstanceAction(instanceId, 'stop');
+        showNotification(`Instance ${instanceId} en cours d'arrêt...`, 'success');
+        setTimeout(loadInstances, 2000);
+    } catch (error) {
+        showNotification(`Erreur: ${error.message}`, 'error');
+    }
+}
+
+// Redémarrer une instance
+async function rebootInstance(instanceId) {
+    if (!confirm(`Êtes-vous sûr de vouloir redémarrer l'instance ${instanceId}?`)) {
+        return;
+    }
+    
+    try {
+        await executeInstanceAction(instanceId, 'reboot');
+        showNotification(`Instance ${instanceId} en cours de redémarrage...`, 'success');
+        setTimeout(loadInstances, 2000);
+    } catch (error) {
+        showNotification(`Erreur: ${error.message}`, 'error');
+    }
+}
+
+// Exécuter une action sur une instance
+async function executeInstanceAction(instanceId, action) {
+    if (awsConfig.apiEndpoint) {
+        // Via backend API
+        const response = await fetch(`${awsConfig.apiEndpoint}/instances/${instanceId}/${action}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Region': awsConfig.region
+            }
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Erreur lors de l\'exécution de l\'action');
+        }
+        
+        return await response.json();
+    } else {
+        // Simulation pour la démo
+        // En production, cela devrait être fait via un backend sécurisé
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        return { success: true, message: `Action ${action} exécutée avec succès` };
+    }
+}
+
+// Mettre à jour les statistiques
+function updateStats(instancesList) {
+    const stats = {
+        running: instancesList.filter(i => i.State.Name === 'running').length,
+        stopped: instancesList.filter(i => i.State.Name === 'stopped').length,
+        pending: instancesList.filter(i => i.State.Name === 'pending' || i.State.Name === 'stopping' || i.State.Name === 'starting').length
     };
-    const callNow = immediate && !timeout;
-    clearTimeout(timeout);
-    timeout = setTimeout(later, wait);
-    if (callNow) func.apply(context, args);
-  };
+    
+    document.getElementById('runningCount').textContent = stats.running;
+    document.getElementById('stoppedCount').textContent = stats.stopped;
+    document.getElementById('pendingCount').textContent = stats.pending;
 }
 
-// ============================================
-// MICRO-INTERACTIONS
-// ============================================
+// Utilitaires
+function getTagValue(tags, key) {
+    if (!tags) return null;
+    const tag = tags.find(t => t.Key === key);
+    return tag ? tag.Value : null;
+}
 
-// Button ripple effect
-const buttons = document.querySelectorAll('.btn');
+function getStateLabel(state) {
+    const labels = {
+        'running': 'En cours d\'exécution',
+        'stopped': 'Arrêtée',
+        'stopping': 'Arrêt en cours',
+        'starting': 'Démarrage en cours',
+        'pending': 'En attente',
+        'stopped': 'Arrêtée',
+        'terminated': 'Terminée'
+    };
+    return labels[state] || state;
+}
 
-buttons.forEach(button => {
-  button.addEventListener('mouseenter', (e) => {
-    const ripple = document.createElement('span');
-    const rect = button.getBoundingClientRect();
-    const size = Math.max(rect.width, rect.height);
-    const x = e.clientX - rect.left - size / 2;
-    const y = e.clientY - rect.top - size / 2;
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('fr-FR', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+// Affichage des états
+function showLoading() {
+    document.getElementById('loading').style.display = 'flex';
+    document.getElementById('error').style.display = 'none';
+    document.getElementById('empty').style.display = 'none';
+    document.getElementById('instancesList').style.display = 'none';
+}
+
+function showError(message) {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('error').style.display = 'flex';
+    document.getElementById('empty').style.display = 'none';
+    document.getElementById('instancesList').style.display = 'none';
+    document.getElementById('errorMessage').textContent = message;
+}
+
+function showEmpty() {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('error').style.display = 'none';
+    document.getElementById('empty').style.display = 'flex';
+    document.getElementById('instancesList').style.display = 'none';
+}
+
+function showInstances() {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('error').style.display = 'none';
+    document.getElementById('empty').style.display = 'none';
+    document.getElementById('instancesList').style.display = 'block';
+}
+
+function showConfigModal() {
+    openConfigModal();
+}
+
+// Notification
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `notification notification--${type}`;
+    notification.textContent = message;
     
-    ripple.style.width = ripple.style.height = size + 'px';
-    ripple.style.left = x + 'px';
-    ripple.style.top = y + 'px';
-    ripple.classList.add('ripple');
-    
-    button.appendChild(ripple);
+    document.body.appendChild(notification);
     
     setTimeout(() => {
-      ripple.remove();
-    }, 600);
-  });
-});
-
-// Portfolio item hover effect
-const portfolioItemsList = document.querySelectorAll('.portfolio-item');
-
-portfolioItemsList.forEach(item => {
-  item.addEventListener('mousemove', (e) => {
-    const rect = item.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+        notification.classList.add('notification--show');
+    }, 100);
     
-    const centerX = rect.width / 2;
-    const centerY = rect.height / 2;
-    
-    const angleX = (y - centerY) / 30;
-    const angleY = (centerX - x) / 30;
-    
-    item.style.transform = `perspective(1000px) rotateX(${angleX}deg) rotateY(${angleY}deg) translateY(-8px)`;
-  });
-  
-  item.addEventListener('mouseleave', () => {
-    item.style.transform = '';
-  });
-});
-
-// ============================================
-// ACCESSIBILITY ENHANCEMENTS
-// ============================================
-
-// Keyboard navigation for portfolio filters
-filterButtons.forEach((button, index) => {
-  button.addEventListener('keydown', (e) => {
-    let newIndex = index;
-    
-    if (e.key === 'ArrowRight') {
-      newIndex = (index + 1) % filterButtons.length;
-      e.preventDefault();
-    } else if (e.key === 'ArrowLeft') {
-      newIndex = (index - 1 + filterButtons.length) % filterButtons.length;
-      e.preventDefault();
-    }
-    
-    if (newIndex !== index) {
-      filterButtons[newIndex].focus();
-    }
-  });
-});
-
-// Trap focus in mobile menu when open
-const trapFocus = (element) => {
-  const focusableElements = element.querySelectorAll(
-    'a[href], button, textarea, input, select'
-  );
-  
-  const firstFocusable = focusableElements[0];
-  const lastFocusable = focusableElements[focusableElements.length - 1];
-  
-  element.addEventListener('keydown', (e) => {
-    if (e.key === 'Tab') {
-      if (e.shiftKey) {
-        if (document.activeElement === firstFocusable) {
-          lastFocusable.focus();
-          e.preventDefault();
-        }
-      } else {
-        if (document.activeElement === lastFocusable) {
-          firstFocusable.focus();
-          e.preventDefault();
-        }
-      }
-    }
-    
-    if (e.key === 'Escape') {
-      navToggle.classList.remove('active');
-      navMenu.classList.remove('active');
-      document.body.style.overflow = '';
-      navToggle.focus();
-    }
-  });
-};
-
-if (navMenu) {
-  trapFocus(navMenu);
-}
-
-// ============================================
-// PRELOAD CRITICAL FONTS
-// ============================================
-
-if ('fonts' in document) {
-  Promise.all([
-    document.fonts.load('600 1em Cormorant Garamond'),
-    document.fonts.load('400 1em Inter')
-  ]).then(() => {
-    document.body.classList.add('fonts-loaded');
-  });
-}
-
-// ============================================
-// PAGE LOAD ANIMATION
-// ============================================
-
-window.addEventListener('load', () => {
-  document.body.classList.add('loaded');
-  
-  // Remove any loading screens if present
-  const loader = document.querySelector('.loader');
-  if (loader) {
-    loader.style.opacity = '0';
     setTimeout(() => {
-      loader.style.display = 'none';
-    }, 300);
-  }
-});
-
-// ============================================
-// CONSOLE SIGNATURE
-// ============================================
-
-console.log(
-  '%c ONE ROOF ',
-  'background: #1E3A5F; color: #C9A961; font-size: 20px; padding: 10px 20px; font-weight: bold;'
-);
-console.log(
-  '%c Patrimoine Familial · Excellence Immobilière ',
-  'color: #1E3A5F; font-size: 12px; font-style: italic;'
-);
-console.log(
-  '%c Site développé avec excellence et attention aux détails ',
-  'color: #666; font-size: 10px;'
-);
+        notification.classList.remove('notification--show');
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
