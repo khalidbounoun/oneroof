@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EC2 Instance Manager - AWS Control Panel</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                        <rect x="4" y="8" width="24" height="16" rx="2" stroke="#FF9900" stroke-width="2"/>
+                        <path d="M4 12h24M12 8v16M20 8v16" stroke="#FF9900" stroke-width="2"/>
+                        <circle cx="8" cy="10" r="1" fill="#FF9900"/>
+                        <circle cx="16" cy="10" r="1" fill="#FF9900"/>
+                        <circle cx="24" cy="10" r="1" fill="#FF9900"/>
+                    </svg>
+                    <h1>EC2 Manager</h1>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-secondary" id="refreshBtn">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <path d="M14 8c0 3.3-2.7 6-6 6s-6-2.7-6-6 2.7-6 6-6c1.5 0 2.9.5 4 1.4M14 2v4h-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        Actualiser
+                    </button>
+                    <div class="status-indicator" id="apiStatus">
+                        <span class="status-dot"></span>
+                        <span class="status-text">Vérification...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+        <div class="container">
+            <!-- Stats Cards -->
+            <div class="stats-grid" id="statsGrid">
+                <div class="stat-card">
+                    <div class="stat-icon stat-icon-total">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <rect x="3" y="6" width="18" height="12" rx="2" stroke="currentColor" stroke-width="2"/>
+                            <path d="M3 10h18M9 6v12M15 6v12" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-label">Total Instances</div>
+                        <div class="stat-value" id="totalInstances">0</div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon stat-icon-running">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                            <path d="M10 8l6 4-6 4V8z" fill="currentColor"/>
+                        </svg>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-label">En cours d'exécution</div>
+                        <div class="stat-value" id="runningInstances">0</div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon stat-icon-stopped">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                            <rect x="9" y="9" width="6" height="6" fill="currentColor"/>
+                        </svg>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-label">Arrêtées</div>
+                        <div class="stat-value" id="stoppedInstances">0</div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon stat-icon-other">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                            <path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-label">Autres états</div>
+                        <div class="stat-value" id="otherInstances">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="filters">
+                <div class="filter-group">
+                    <label for="stateFilter">Filtrer par état:</label>
+                    <select id="stateFilter" class="filter-select">
+                        <option value="all">Tous les états</option>
+                        <option value="running">En cours</option>
+                        <option value="stopped">Arrêté</option>
+                        <option value="pending">En attente</option>
+                        <option value="stopping">Arrêt en cours</option>
+                    </select>
+                </div>
+                <div class="search-box">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="2"/>
+                        <path d="M11 11l4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <input type="text" id="searchInput" placeholder="Rechercher par nom ou ID...">
+                </div>
+            </div>
+
+            <!-- Instances Table -->
+            <div class="instances-section">
+                <div class="section-header">
+                    <h2>Instances EC2</h2>
+                    <div class="last-update">
+                        Dernière mise à jour: <span id="lastUpdate">-</span>
+                    </div>
+                </div>
+
+                <!-- Loading State -->
+                <div class="loading-state" id="loadingState">
+                    <div class="spinner"></div>
+                    <p>Chargement des instances...</p>
+                </div>
+
+                <!-- Error State -->
+                <div class="error-state" id="errorState" style="display: none;">
+                    <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                        <circle cx="24" cy="24" r="20" stroke="#ef4444" stroke-width="2"/>
+                        <path d="M24 16v12M24 32v.5" stroke="#ef4444" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <h3>Erreur de chargement</h3>
+                    <p id="errorMessage">Impossible de charger les instances</p>
+                    <button class="btn btn-primary" onclick="loadInstances()">Réessayer</button>
+                </div>
+
+                <!-- Empty State -->
+                <div class="empty-state" id="emptyState" style="display: none;">
+                    <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+                        <rect x="8" y="16" width="48" height="32" rx="4" stroke="#94a3b8" stroke-width="2"/>
+                        <path d="M8 24h48M20 16v32M36 16v32" stroke="#94a3b8" stroke-width="2"/>
+                    </svg>
+                    <h3>Aucune instance trouvée</h3>
+                    <p>Aucune instance EC2 n'est disponible dans votre compte AWS</p>
+                </div>
+
+                <!-- Instances Grid -->
+                <div class="instances-grid" id="instancesGrid" style="display: none;">
+                    <!-- Instances will be loaded here dynamically -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal for Instance Details -->
+    <div class="modal" id="instanceModal">
+        <div class="modal-overlay" onclick="closeModal()"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Détails de l'instance</h3>
+                <button class="modal-close" onclick="closeModal()">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Details will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
