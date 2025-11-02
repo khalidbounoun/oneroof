@@ -1,0 +1,26 @@
+{
+  "name": "ec2-manager-backend",
+  "version": "1.0.0",
+  "description": "Backend API pour l'application de gestion EC2",
+  "main": "backend-example.js",
+  "scripts": {
+    "start": "node backend-example.js",
+    "dev": "nodemon backend-example.js"
+  },
+  "keywords": [
+    "aws",
+    "ec2",
+    "api",
+    "backend"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "aws-sdk": "^2.1500.0",
+    "cors": "^2.8.5",
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
