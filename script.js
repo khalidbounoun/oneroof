@@ -1,481 +1,517 @@
-/**
- * ONE ROOF - Luxury Real Estate Website
- * Interactive Features & Animations
- */
+import {
+  EC2Client,
+  DescribeInstancesCommand,
+  StartInstancesCommand,
+  StopInstancesCommand
+} from "https://cdn.jsdelivr.net/npm/@aws-sdk/client-ec2@3.654.0/+esm";
 
-// ============================================
-// NAVIGATION
-// ============================================
+const credentialsForm = document.getElementById("credentialsForm");
+const accessKeyInput = document.getElementById("accessKeyId");
+const secretKeyInput = document.getElementById("secretAccessKey");
+const sessionTokenInput = document.getElementById("sessionToken");
+const regionInput = document.getElementById("region");
+const tagFilterInput = document.getElementById("tagFilter");
+const connectButton = document.getElementById("connectButton");
+const credentialStatus = document.getElementById("credentialStatus");
+const resetCredentialsButton = document.getElementById("resetCredentials");
+const refreshButton = document.getElementById("refreshButton");
 
-const nav = document.getElementById('nav');
-const navToggle = document.getElementById('navToggle');
-const navMenu = document.getElementById('navMenu');
-const progressBar = document.getElementById('progressBar');
+const instancesPlaceholder = document.getElementById("instancesPlaceholder");
+const placeholderIcon = instancesPlaceholder.querySelector(".placeholder__icon");
+const placeholderMessage = instancesPlaceholder.querySelector("p");
+const tableWrapper = document.querySelector(".table-wrapper");
+const instancesTableBody = document.getElementById("instancesTableBody");
 
-// Sticky Navigation on Scroll
-let lastScrollTop = 0;
-window.addEventListener('scroll', () => {
-  const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-  
-  // Add scrolled class for background
-  if (scrollTop > 50) {
-    nav.classList.add('scrolled');
-  } else {
-    nav.classList.remove('scrolled');
-  }
-  
-  // Update progress bar
-  const windowHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-  const scrolled = (scrollTop / windowHeight) * 100;
-  progressBar.style.width = scrolled + '%';
-  
-  lastScrollTop = scrollTop;
-});
+const activityLog = document.getElementById("activityLog");
+const clearLogButton = document.getElementById("clearLog");
+const toast = document.getElementById("toast");
 
-// Mobile Menu Toggle
-navToggle.addEventListener('click', () => {
-  navToggle.classList.toggle('active');
-  navMenu.classList.toggle('active');
-  document.body.style.overflow = navMenu.classList.contains('active') ? 'hidden' : '';
-});
+let ec2Client = null;
+let isConnecting = false;
+let isFetching = false;
+let toastTimeoutId = null;
 
-// Close mobile menu on link click
-document.querySelectorAll('.nav__link').forEach(link => {
-  link.addEventListener('click', () => {
-    navToggle.classList.remove('active');
-    navMenu.classList.remove('active');
-    document.body.style.overflow = '';
-  });
-});
-
-// ============================================
-// PARALLAX EFFECT - HERO
-// ============================================
-
-const hero = document.querySelector('.hero');
-const heroLayers = document.querySelectorAll('.hero__layer');
-
-window.addEventListener('scroll', () => {
-  if (!hero) return;
-  
-  const scrolled = window.pageYOffset;
-  const heroHeight = hero.offsetHeight;
-  
-  if (scrolled < heroHeight) {
-    heroLayers.forEach((layer, index) => {
-      const speed = (index + 1) * 0.15;
-      const yPos = -(scrolled * speed);
-      layer.style.transform = `translate3d(0, ${yPos}px, 0)`;
-    });
-  }
-});
-
-// ============================================
-// SCROLL REVEAL ANIMATION
-// ============================================
-
-const revealElements = document.querySelectorAll('.reveal');
-
-const revealObserver = new IntersectionObserver((entries) => {
-  entries.forEach((entry, index) => {
-    if (entry.isIntersecting) {
-      // Stagger effect
-      setTimeout(() => {
-        entry.target.classList.add('active');
-      }, index * 100);
-      
-      revealObserver.unobserve(entry.target);
-    }
-  });
-}, {
-  threshold: 0.15,
-  rootMargin: '0px 0px -50px 0px'
-});
-
-revealElements.forEach(element => {
-  revealObserver.observe(element);
-});
-
-// ============================================
-// PORTFOLIO FILTERS
-// ============================================
-
-const filterButtons = document.querySelectorAll('.filter-btn');
-const portfolioItems = document.querySelectorAll('.portfolio-item');
-
-filterButtons.forEach(button => {
-  button.addEventListener('click', () => {
-    // Update active button
-    filterButtons.forEach(btn => btn.classList.remove('active'));
-    button.classList.add('active');
-    
-    const filterValue = button.getAttribute('data-filter');
-    
-    // Filter items with animation
-    portfolioItems.forEach((item, index) => {
-      const category = item.getAttribute('data-category');
-      
-      if (filterValue === 'all' || category === filterValue) {
-        setTimeout(() => {
-          item.classList.remove('hidden');
-          item.style.animation = 'fadeInUp 0.6s ease-out forwards';
-        }, index * 50);
-      } else {
-        item.classList.add('hidden');
-      }
-    });
-  });
-});
-
-// ============================================
-// ANIMATED COUNTERS
-// ============================================
-
-const statNumbers = document.querySelectorAll('.stat-item__number');
-let countersAnimated = false;
-
-const animateCounter = (element) => {
-  const target = parseInt(element.getAttribute('data-target'));
-  const duration = 2000; // 2 seconds
-  const increment = target / (duration / 16); // 60fps
-  let current = 0;
-  
-  const updateCounter = () => {
-    current += increment;
-    
-    if (current < target) {
-      element.textContent = Math.floor(current);
-      requestAnimationFrame(updateCounter);
-    } else {
-      element.textContent = target;
-    }
-  };
-  
-  updateCounter();
+const PLACEHOLDER_ICONS = {
+  info: "☁️",
+  loading: "⏳",
+  empty: "📭",
+  error: "⚠️"
 };
 
-// Observe stats section
-const statsObserver = new IntersectionObserver((entries) => {
-  entries.forEach(entry => {
-    if (entry.isIntersecting && !countersAnimated) {
-      countersAnimated = true;
-      
-      statNumbers.forEach((stat, index) => {
-        setTimeout(() => {
-          animateCounter(stat);
-        }, index * 150);
-      });
-      
-      statsObserver.unobserve(entry.target);
-    }
-  });
-}, {
-  threshold: 0.5
-});
+const STATE_LABELS = {
+  pending: "Démarrage",
+  running: "En fonctionnement",
+  stopping: "Arrêt en cours",
+  stopped: "Arrêtée",
+  "shutting-down": "Extinction",
+  terminated: "Supprimée",
+  rebooting: "Redémarrage"
+};
 
-const statsSection = document.querySelector('.stats');
-if (statsSection) {
-  statsObserver.observe(statsSection);
+const STATE_VARIANTS = {
+  running: "success",
+  stopped: "idle",
+  pending: "warning",
+  stopping: "warning",
+  "shutting-down": "warning",
+  rebooting: "warning",
+  terminated: "error"
+};
+
+function setCredentialStatus(state, label) {
+  credentialStatus.textContent = label;
+  credentialStatus.className = `status-badge status-badge--${state}`;
 }
 
-// ============================================
-// SMOOTH SCROLL
-// ============================================
+function setPlaceholder(state, message) {
+  placeholderIcon.textContent = PLACEHOLDER_ICONS[state] || PLACEHOLDER_ICONS.info;
+  placeholderMessage.textContent = message;
+  instancesPlaceholder.dataset.state = state;
+}
 
-document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-  anchor.addEventListener('click', function (e) {
-    e.preventDefault();
-    
-    const targetId = this.getAttribute('href');
-    if (targetId === '#') return;
-    
-    const targetElement = document.querySelector(targetId);
-    
-    if (targetElement) {
-      const navHeight = nav.offsetHeight;
-      const targetPosition = targetElement.getBoundingClientRect().top + window.pageYOffset - navHeight;
-      
-      window.scrollTo({
-        top: targetPosition,
-        behavior: 'smooth'
-      });
+function setButtonLoading(button, isLoading, loadingText) {
+  if (!button) return;
+
+  if (isLoading) {
+    if (!button.dataset.originalText) {
+      button.dataset.originalText = button.textContent;
     }
-  });
-});
-
-// ============================================
-// FORM HANDLING
-// ============================================
-
-const contactForm = document.getElementById('contactForm');
-
-if (contactForm) {
-  contactForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    
-    // Get form data
-    const formData = new FormData(contactForm);
-    const data = Object.fromEntries(formData);
-    
-    // Simulate form submission
-    console.log('Form submitted:', data);
-    
-    // Show success message
-    const button = contactForm.querySelector('button[type="submit"]');
-    const originalText = button.innerHTML;
-    
-    button.innerHTML = `
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-        <path d="M4 10l4 4 8-8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-      </svg>
-      Message Envoyé !
-    `;
+    button.textContent = loadingText || button.textContent;
     button.disabled = true;
-    
-    // Reset after 3 seconds
-    setTimeout(() => {
-      button.innerHTML = originalText;
-      button.disabled = false;
-      contactForm.reset();
-    }, 3000);
-  });
-  
-  // Form input animations
-  const formInputs = contactForm.querySelectorAll('.form-input');
-  
-  formInputs.forEach(input => {
-    input.addEventListener('focus', () => {
-      input.parentElement.classList.add('focused');
-    });
-    
-    input.addEventListener('blur', () => {
-      if (!input.value) {
-        input.parentElement.classList.remove('focused');
-      }
-    });
-  });
-}
-
-// ============================================
-// INTERSECTION OBSERVER FOR SECTIONS
-// ============================================
-
-// Add active class to nav links based on scroll position
-const sections = document.querySelectorAll('section[id]');
-
-const sectionObserver = new IntersectionObserver((entries) => {
-  entries.forEach(entry => {
-    if (entry.isIntersecting) {
-      const id = entry.target.getAttribute('id');
-      
-      // Remove active class from all nav links
-      document.querySelectorAll('.nav__link').forEach(link => {
-        link.classList.remove('active');
-      });
-      
-      // Add active class to current nav link
-      const activeLink = document.querySelector(`.nav__link[href="#${id}"]`);
-      if (activeLink) {
-        activeLink.classList.add('active');
-      }
+    button.classList.add("is-loading");
+  } else {
+    const original = button.dataset.originalText;
+    if (original) {
+      button.textContent = original;
     }
-  });
-}, {
-  threshold: 0.3
-});
-
-sections.forEach(section => {
-  sectionObserver.observe(section);
-});
-
-// ============================================
-// PERFORMANCE OPTIMIZATIONS
-// ============================================
-
-// Lazy load images (if using actual images)
-if ('loading' in HTMLImageElement.prototype) {
-  const images = document.querySelectorAll('img[loading="lazy"]');
-  images.forEach(img => {
-    img.src = img.dataset.src;
-  });
-} else {
-  // Fallback for browsers that don't support lazy loading
-  const script = document.createElement('script');
-  script.src = 'https://cdnjs.cloudflare.com/ajax/libs/lazysizes/5.3.2/lazysizes.min.js';
-  document.body.appendChild(script);
-}
-
-// Debounce function for scroll events
-function debounce(func, wait = 10, immediate = false) {
-  let timeout;
-  return function() {
-    const context = this;
-    const args = arguments;
-    const later = function() {
-      timeout = null;
-      if (!immediate) func.apply(context, args);
-    };
-    const callNow = immediate && !timeout;
-    clearTimeout(timeout);
-    timeout = setTimeout(later, wait);
-    if (callNow) func.apply(context, args);
-  };
-}
-
-// ============================================
-// MICRO-INTERACTIONS
-// ============================================
-
-// Button ripple effect
-const buttons = document.querySelectorAll('.btn');
-
-buttons.forEach(button => {
-  button.addEventListener('mouseenter', (e) => {
-    const ripple = document.createElement('span');
-    const rect = button.getBoundingClientRect();
-    const size = Math.max(rect.width, rect.height);
-    const x = e.clientX - rect.left - size / 2;
-    const y = e.clientY - rect.top - size / 2;
-    
-    ripple.style.width = ripple.style.height = size + 'px';
-    ripple.style.left = x + 'px';
-    ripple.style.top = y + 'px';
-    ripple.classList.add('ripple');
-    
-    button.appendChild(ripple);
-    
-    setTimeout(() => {
-      ripple.remove();
-    }, 600);
-  });
-});
-
-// Portfolio item hover effect
-const portfolioItemsList = document.querySelectorAll('.portfolio-item');
-
-portfolioItemsList.forEach(item => {
-  item.addEventListener('mousemove', (e) => {
-    const rect = item.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    
-    const centerX = rect.width / 2;
-    const centerY = rect.height / 2;
-    
-    const angleX = (y - centerY) / 30;
-    const angleY = (centerX - x) / 30;
-    
-    item.style.transform = `perspective(1000px) rotateX(${angleX}deg) rotateY(${angleY}deg) translateY(-8px)`;
-  });
-  
-  item.addEventListener('mouseleave', () => {
-    item.style.transform = '';
-  });
-});
-
-// ============================================
-// ACCESSIBILITY ENHANCEMENTS
-// ============================================
-
-// Keyboard navigation for portfolio filters
-filterButtons.forEach((button, index) => {
-  button.addEventListener('keydown', (e) => {
-    let newIndex = index;
-    
-    if (e.key === 'ArrowRight') {
-      newIndex = (index + 1) % filterButtons.length;
-      e.preventDefault();
-    } else if (e.key === 'ArrowLeft') {
-      newIndex = (index - 1 + filterButtons.length) % filterButtons.length;
-      e.preventDefault();
-    }
-    
-    if (newIndex !== index) {
-      filterButtons[newIndex].focus();
-    }
-  });
-});
-
-// Trap focus in mobile menu when open
-const trapFocus = (element) => {
-  const focusableElements = element.querySelectorAll(
-    'a[href], button, textarea, input, select'
-  );
-  
-  const firstFocusable = focusableElements[0];
-  const lastFocusable = focusableElements[focusableElements.length - 1];
-  
-  element.addEventListener('keydown', (e) => {
-    if (e.key === 'Tab') {
-      if (e.shiftKey) {
-        if (document.activeElement === firstFocusable) {
-          lastFocusable.focus();
-          e.preventDefault();
-        }
-      } else {
-        if (document.activeElement === lastFocusable) {
-          firstFocusable.focus();
-          e.preventDefault();
-        }
-      }
-    }
-    
-    if (e.key === 'Escape') {
-      navToggle.classList.remove('active');
-      navMenu.classList.remove('active');
-      document.body.style.overflow = '';
-      navToggle.focus();
-    }
-  });
-};
-
-if (navMenu) {
-  trapFocus(navMenu);
-}
-
-// ============================================
-// PRELOAD CRITICAL FONTS
-// ============================================
-
-if ('fonts' in document) {
-  Promise.all([
-    document.fonts.load('600 1em Cormorant Garamond'),
-    document.fonts.load('400 1em Inter')
-  ]).then(() => {
-    document.body.classList.add('fonts-loaded');
-  });
-}
-
-// ============================================
-// PAGE LOAD ANIMATION
-// ============================================
-
-window.addEventListener('load', () => {
-  document.body.classList.add('loaded');
-  
-  // Remove any loading screens if present
-  const loader = document.querySelector('.loader');
-  if (loader) {
-    loader.style.opacity = '0';
-    setTimeout(() => {
-      loader.style.display = 'none';
-    }, 300);
+    button.disabled = false;
+    button.classList.remove("is-loading");
   }
+}
+
+function parseTagFilters(input) {
+  const trimmed = (input || "").trim();
+  if (!trimmed) {
+    return { filters: [], warnings: [] };
+  }
+
+  const segments = trimmed.split(",").map(segment => segment.trim()).filter(Boolean);
+  const filters = [];
+  const warnings = [];
+
+  segments.forEach(segment => {
+    const [rawKey, rawValues] = segment.split("=");
+    const key = rawKey?.trim();
+    const valueString = rawValues?.trim();
+
+    if (!key || !valueString) {
+      warnings.push(`Filtre ignoré (format attendu clé=valeur) : ${segment}`);
+      return;
+    }
+
+    const values = valueString
+      .split("|")
+      .map(value => value.trim())
+      .filter(Boolean);
+
+    if (!values.length) {
+      warnings.push(`Valeurs manquantes pour le filtre ${key}.`);
+      return;
+    }
+
+    filters.push({
+      Name: `tag:${key}`,
+      Values: values
+    });
+  });
+
+  return { filters, warnings };
+}
+
+function formatState(state) {
+  if (!state) return "Inconnu";
+  return STATE_LABELS[state] || state;
+}
+
+function getStateVariant(state) {
+  return STATE_VARIANTS[state] || "idle";
+}
+
+function canStart(state) {
+  return state === "stopped";
+}
+
+function canStop(state) {
+  return state === "running";
+}
+
+function logActivity(message, level = "info") {
+  if (!message) return;
+
+  const placeholder = activityLog.querySelector(".log-placeholder");
+  if (placeholder) {
+    placeholder.remove();
+  }
+
+  const entry = document.createElement("div");
+  entry.className = `log-entry log-entry--${level}`;
+
+  const time = document.createElement("time");
+  const now = new Date();
+  time.className = "log-entry__time";
+  time.dateTime = now.toISOString();
+  time.textContent = now.toLocaleTimeString();
+
+  const messageSpan = document.createElement("span");
+  messageSpan.className = "log-entry__message";
+  messageSpan.textContent = message;
+
+  entry.append(time, messageSpan);
+  activityLog.append(entry);
+  activityLog.scrollTop = activityLog.scrollHeight;
+
+  updateClearLogState();
+}
+
+function updateClearLogState() {
+  const hasEntries = !!activityLog.querySelector(".log-entry");
+  clearLogButton.disabled = !hasEntries;
+}
+
+function clearActivityLog() {
+  activityLog.innerHTML = "";
+  const placeholder = document.createElement("p");
+  placeholder.className = "log-placeholder";
+  placeholder.textContent = "En attente d'actions...";
+  activityLog.append(placeholder);
+  updateClearLogState();
+}
+
+function showToast(message, variant = "info") {
+  if (!toast) return;
+
+  toast.textContent = message;
+  toast.dataset.variant = variant;
+  toast.hidden = false;
+  toast.classList.add("toast--visible");
+
+  if (toastTimeoutId) {
+    clearTimeout(toastTimeoutId);
+  }
+
+  toastTimeoutId = window.setTimeout(() => {
+    toast.classList.remove("toast--visible");
+    toast.hidden = true;
+  }, 4500);
+}
+
+function renderInstances(instances) {
+  instancesTableBody.innerHTML = "";
+
+  if (!instances.length) {
+    return;
+  }
+
+  const fragment = document.createDocumentFragment();
+
+  instances.forEach(instance => {
+    const instanceId = instance.InstanceId || "N/A";
+    const tags = instance.Tags || [];
+    const nameTag = tags.find(tag => tag.Key === "Name");
+    const name = nameTag?.Value || "—";
+    const type = instance.InstanceType || "—";
+    const availabilityZone = instance.Placement?.AvailabilityZone || "—";
+    const state = instance.State?.Name || "unknown";
+    const displayState = formatState(state);
+    const stateVariant = getStateVariant(state);
+
+    const row = document.createElement("tr");
+    row.dataset.instanceId = instanceId;
+    row.dataset.state = state;
+
+    const idCell = document.createElement("td");
+    idCell.textContent = instanceId;
+
+    const nameCell = document.createElement("td");
+    nameCell.textContent = name;
+
+    const typeCell = document.createElement("td");
+    typeCell.textContent = type;
+
+    const zoneCell = document.createElement("td");
+    zoneCell.textContent = availabilityZone;
+
+    const stateCell = document.createElement("td");
+    const stateChip = document.createElement("span");
+    stateChip.className = `state-label state-label--${stateVariant}`;
+    stateChip.textContent = displayState;
+    stateCell.append(stateChip);
+
+    const actionsCell = document.createElement("td");
+    actionsCell.className = "col-actions";
+
+    const startButton = document.createElement("button");
+    startButton.type = "button";
+    startButton.className = "action-button action-button--start";
+    startButton.dataset.action = "start";
+    startButton.dataset.instanceId = instanceId;
+    startButton.textContent = "Démarrer";
+    startButton.disabled = !canStart(state);
+
+    const stopButton = document.createElement("button");
+    stopButton.type = "button";
+    stopButton.className = "action-button action-button--stop";
+    stopButton.dataset.action = "stop";
+    stopButton.dataset.instanceId = instanceId;
+    stopButton.textContent = "Arrêter";
+    stopButton.disabled = !canStop(state);
+
+    actionsCell.append(startButton, stopButton);
+
+    row.append(idCell, nameCell, typeCell, zoneCell, stateCell, actionsCell);
+    fragment.append(row);
+  });
+
+  instancesTableBody.append(fragment);
+}
+
+async function buildEc2Client(credentials) {
+  return new EC2Client({
+    region: credentials.region,
+    credentials: {
+      accessKeyId: credentials.accessKeyId,
+      secretAccessKey: credentials.secretAccessKey,
+      sessionToken: credentials.sessionToken || undefined
+    }
+  });
+}
+
+async function fetchInstances({ showLoading = true, throwOnError = false } = {}) {
+  if (!ec2Client) {
+    const error = new Error("Client AWS non initialisé");
+    if (throwOnError) throw error;
+    return [];
+  }
+
+  if (isFetching) {
+    return [];
+  }
+
+  isFetching = true;
+  refreshButton.disabled = true;
+
+  const { filters, warnings } = parseTagFilters(tagFilterInput.value);
+  warnings.forEach(warning => logActivity(warning, "warning"));
+
+  if (showLoading) {
+    tableWrapper.hidden = true;
+    instancesPlaceholder.hidden = false;
+    setPlaceholder("loading", "Récupération des instances en cours...");
+  }
+
+  if (!showLoading) {
+    setButtonLoading(refreshButton, true, "Actualisation...");
+  }
+
+  try {
+    const instances = [];
+    let nextToken = undefined;
+
+    do {
+      const command = new DescribeInstancesCommand({
+        Filters: filters,
+        MaxResults: 50,
+        NextToken: nextToken
+      });
+
+      const response = await ec2Client.send(command);
+      const reservations = response.Reservations || [];
+
+      reservations.forEach(reservation => {
+        const reservationInstances = reservation.Instances || [];
+        reservationInstances.forEach(instance => {
+          instances.push(instance);
+        });
+      });
+
+      nextToken = response.NextToken;
+    } while (nextToken && instances.length < 200);
+
+    if (!instances.length) {
+      renderInstances([]);
+      tableWrapper.hidden = true;
+      instancesPlaceholder.hidden = false;
+      setPlaceholder("empty", "Aucune instance ne correspond aux filtres fournis.");
+      logActivity("Aucune instance renvoyée par l'API EC2.", "info");
+    } else {
+      renderInstances(instances);
+      tableWrapper.hidden = false;
+      instancesPlaceholder.hidden = true;
+      logActivity(
+        `${instances.length} instance${instances.length > 1 ? "s" : ""} récupérée${instances.length > 1 ? "s" : ""}.`,
+        "success"
+      );
+    }
+
+    return instances;
+  } catch (error) {
+    const message = error?.message || "Erreur inattendue lors de la récupération des instances.";
+    setPlaceholder("error", "Impossible de récupérer les instances. Vérifiez vos autorisations.");
+    tableWrapper.hidden = true;
+    instancesPlaceholder.hidden = false;
+    logActivity(`Erreur EC2 DescribeInstances : ${message}`, "error");
+    showToast(message, "error");
+    if (throwOnError) {
+      throw error;
+    }
+    return [];
+  } finally {
+    isFetching = false;
+    refreshButton.disabled = !ec2Client;
+    setButtonLoading(refreshButton, false);
+  }
+}
+
+async function performInstanceAction(instanceId, action, button) {
+  if (!ec2Client || !instanceId) {
+    showToast("Client AWS non initialisé.", "error");
+    return;
+  }
+
+  const isStart = action === "start";
+  const command = isStart
+    ? new StartInstancesCommand({ InstanceIds: [instanceId] })
+    : new StopInstancesCommand({ InstanceIds: [instanceId] });
+
+  const actionLabel = isStart ? "démarrage" : "mise à l'arrêt";
+
+  if (button) {
+    setButtonLoading(button, true, isStart ? "Démarrage..." : "Arrêt...");
+  }
+
+  logActivity(`Envoi de la requête de ${actionLabel} pour ${instanceId}...`, "info");
+
+  try {
+    await ec2Client.send(command);
+    logActivity(`Commande ${actionLabel} envoyée pour ${instanceId}.`, "success");
+    showToast(`Commande ${actionLabel} envoyée à ${instanceId}.`, "success");
+    await fetchInstances({ showLoading: false });
+  } catch (error) {
+    const message = error?.message || "Erreur inattendue";
+    logActivity(`Erreur lors de la commande ${actionLabel} pour ${instanceId} : ${message}`, "error");
+    showToast(message, "error");
+  } finally {
+    if (button) {
+      setButtonLoading(button, false);
+    }
+  }
+}
+
+async function handleCredentialsSubmit(event) {
+  event.preventDefault();
+
+  if (isConnecting) {
+    return;
+  }
+
+  const accessKeyId = accessKeyInput.value.trim();
+  const secretAccessKey = secretKeyInput.value.trim();
+  const sessionToken = sessionTokenInput.value.trim();
+  const region = regionInput.value.trim();
+
+  if (!accessKeyId || !secretAccessKey || !region) {
+    showToast("Veuillez renseigner les champs obligatoires.", "warning");
+    return;
+  }
+
+  isConnecting = true;
+  setButtonLoading(connectButton, true, "Connexion...");
+  setCredentialStatus("connecting", "Connexion en cours...");
+  logActivity("Initialisation du client EC2...", "info");
+
+  try {
+    ec2Client = await buildEc2Client({
+      accessKeyId,
+      secretAccessKey,
+      sessionToken,
+      region
+    });
+
+    await fetchInstances({ showLoading: true, throwOnError: true });
+
+    setCredentialStatus("success", "Connecté");
+    resetCredentialsButton.disabled = false;
+    refreshButton.disabled = false;
+    showToast("Connexion établie avec succès.", "success");
+    logActivity("Connexion établie avec AWS EC2.", "success");
+  } catch (error) {
+    ec2Client = null;
+    const message = error?.message || "Impossible d'initialiser le client EC2.";
+    setCredentialStatus("error", "Échec de la connexion");
+    showToast(message, "error");
+    logActivity(`Échec de la connexion : ${message}`, "error");
+  } finally {
+    isConnecting = false;
+    setButtonLoading(connectButton, false);
+  }
+}
+
+function resetCredentials() {
+  credentialsForm.reset();
+  ec2Client = null;
+  setCredentialStatus("idle", "Déconnecté");
+  resetCredentialsButton.disabled = true;
+  refreshButton.disabled = true;
+  setPlaceholder("info", "Initialisez le client AWS pour récupérer vos instances.");
+  tableWrapper.hidden = true;
+  instancesPlaceholder.hidden = false;
+  instancesTableBody.innerHTML = "";
+  logActivity("Identifiants réinitialisés. Les actions EC2 sont désactivées.", "info");
+  showToast("Identifiants supprimés du navigateur.", "info");
+}
+
+function hideToast() {
+  toast.classList.remove("toast--visible");
+  toast.hidden = true;
+  if (toastTimeoutId) {
+    clearTimeout(toastTimeoutId);
+  }
+}
+
+credentialsForm.addEventListener("submit", handleCredentialsSubmit);
+
+resetCredentialsButton.addEventListener("click", () => {
+  resetCredentials();
 });
 
-// ============================================
-// CONSOLE SIGNATURE
-// ============================================
+refreshButton.addEventListener("click", () => {
+  if (!ec2Client) {
+    showToast("Initialisez d'abord le client AWS.", "warning");
+    return;
+  }
+  fetchInstances({ showLoading: true });
+});
 
-console.log(
-  '%c ONE ROOF ',
-  'background: #1E3A5F; color: #C9A961; font-size: 20px; padding: 10px 20px; font-weight: bold;'
-);
-console.log(
-  '%c Patrimoine Familial · Excellence Immobilière ',
-  'color: #1E3A5F; font-size: 12px; font-style: italic;'
-);
-console.log(
-  '%c Site développé avec excellence et attention aux détails ',
-  'color: #666; font-size: 10px;'
-);
+instancesTableBody.addEventListener("click", event => {
+  const button = event.target.closest("button[data-action]");
+  if (!button) return;
+
+  const { action, instanceId } = button.dataset;
+  if (!action || !instanceId) return;
+
+  performInstanceAction(instanceId, action, button);
+});
+
+clearLogButton.addEventListener("click", () => {
+  clearActivityLog();
+  showToast("Journal effacé.", "info");
+});
+
+if (toast) {
+  toast.addEventListener("click", hideToast);
+}
+
+// Initial UI state
+setCredentialStatus("idle", "Déconnecté");
+updateClearLogState();
+setPlaceholder("info", "Initialisez le client AWS pour récupérer vos instances.");
