@@ -4,6 +4,12 @@
    ======================================== */
 
 // ========================================
+// API CONFIGURATION
+// ========================================
+
+const API_URL = window.location.origin;
+
+// ========================================
 // DATA MODEL & STATE
 // ========================================
 
@@ -13,21 +19,89 @@ let state = {
 };
 
 // ========================================
-// LOCAL STORAGE
+// API FUNCTIONS
 // ========================================
 
-function saveToLocalStorage() {
-    localStorage.setItem('renovationProjects', JSON.stringify(state));
+async function apiRequest(endpoint, options = {}) {
+    try {
+        const response = await fetch(`${API_URL}${endpoint}`, {
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            },
+            ...options
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Request failed');
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('API Error:', error);
+        throw error;
+    }
 }
 
-function loadFromLocalStorage() {
-    const saved = localStorage.getItem('renovationProjects');
-    if (saved) {
-        state = JSON.parse(saved);
+// ========================================
+// DATA SYNCHRONIZATION
+// ========================================
+
+async function loadFromServer() {
+    try {
+        const projects = await apiRequest('/api/projects');
+        state.projects = projects;
+
+        // Restore current project from localStorage if available
+        const savedCurrentProjectId = localStorage.getItem('currentProjectId');
+        if (savedCurrentProjectId && state.projects.find(p => p.id === savedCurrentProjectId)) {
+            state.currentProjectId = savedCurrentProjectId;
+        } else if (state.projects.length > 0) {
+            state.currentProjectId = state.projects[0].id;
+        }
+
         updateProjectSelector();
         if (state.currentProjectId) {
             updateDashboard();
         }
+    } catch (error) {
+        console.error('Failed to load data from server:', error);
+        alert('Erreur de connexion au serveur. Veuillez vérifier que le serveur est démarré.');
+    }
+}
+
+async function migrateFromLocalStorage() {
+    const saved = localStorage.getItem('renovationProjects');
+    if (!saved) return false;
+
+    try {
+        const oldState = JSON.parse(saved);
+        if (!oldState.projects || oldState.projects.length === 0) return false;
+
+        // Confirm migration with user
+        if (!confirm(`Voulez-vous migrer ${oldState.projects.length} projet(s) depuis le stockage local vers la base de données ?`)) {
+            return false;
+        }
+
+        await apiRequest('/api/migrate', {
+            method: 'POST',
+            body: JSON.stringify({ projects: oldState.projects })
+        });
+
+        // Clear localStorage after successful migration
+        localStorage.removeItem('renovationProjects');
+
+        alert('Migration réussie ! Vos données sont maintenant stockées de manière permanente sur le serveur.');
+
+        // Reload data from server
+        await loadFromServer();
+
+        return true;
+    } catch (error) {
+        console.error('Migration failed:', error);
+        alert('Échec de la migration. Vos données locales sont préservées.');
+        return false;
     }
 }
 
@@ -35,7 +109,7 @@ function loadFromLocalStorage() {
 // PROJECT MANAGEMENT
 // ========================================
 
-function createProject(name, budget, description = '') {
+async function createProject(name, budget, description = '') {
     const project = {
         id: Date.now().toString(),
         name,
@@ -46,27 +120,53 @@ function createProject(name, budget, description = '') {
         tasks: []
     };
 
-    state.projects.push(project);
-    state.currentProjectId = project.id;
-    saveToLocalStorage();
-    updateProjectSelector();
-    updateDashboard();
-    return project;
+    try {
+        const created = await apiRequest('/api/projects', {
+            method: 'POST',
+            body: JSON.stringify(project)
+        });
+
+        state.projects.push(created);
+        state.currentProjectId = created.id;
+
+        // Save current project ID to localStorage for persistence across sessions
+        localStorage.setItem('currentProjectId', created.id);
+
+        updateProjectSelector();
+        updateDashboard();
+        return created;
+    } catch (error) {
+        alert('Erreur lors de la création du projet');
+        throw error;
+    }
 }
 
 function getCurrentProject() {
     return state.projects.find(p => p.id === state.currentProjectId);
 }
 
-function deleteProject(projectId) {
-    if (confirm('Êtes-vous sûr de vouloir supprimer ce projet ? Cette action est irréversible.')) {
+async function deleteProject(projectId) {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer ce projet ? Cette action est irréversible.')) {
+        return;
+    }
+
+    try {
+        await apiRequest(`/api/projects/${projectId}`, {
+            method: 'DELETE'
+        });
+
         state.projects = state.projects.filter(p => p.id !== projectId);
+
         if (state.currentProjectId === projectId) {
             state.currentProjectId = state.projects.length > 0 ? state.projects[0].id : null;
+            localStorage.setItem('currentProjectId', state.currentProjectId || '');
         }
-        saveToLocalStorage();
+
         updateProjectSelector();
         updateDashboard();
+    } catch (error) {
+        alert('Erreur lors de la suppression du projet');
+        throw error;
     }
 }
 
@@ -74,7 +174,7 @@ function deleteProject(projectId) {
 // EXPENSE MANAGEMENT
 // ========================================
 
-function addExpense(name, amount, category, date) {
+async function addExpense(name, amount, category, date) {
     const project = getCurrentProject();
     if (!project) return;
 
@@ -87,19 +187,36 @@ function addExpense(name, amount, category, date) {
         createdAt: new Date().toISOString()
     };
 
-    project.expenses.push(expense);
-    saveToLocalStorage();
-    updateDashboard();
-    return expense;
+    try {
+        const created = await apiRequest(`/api/projects/${project.id}/expenses`, {
+            method: 'POST',
+            body: JSON.stringify(expense)
+        });
+
+        project.expenses.push(created);
+        updateDashboard();
+        return created;
+    } catch (error) {
+        alert('Erreur lors de l\'ajout de la dépense');
+        throw error;
+    }
 }
 
-function deleteExpense(expenseId) {
+async function deleteExpense(expenseId) {
     const project = getCurrentProject();
     if (!project) return;
 
-    project.expenses = project.expenses.filter(e => e.id !== expenseId);
-    saveToLocalStorage();
-    updateDashboard();
+    try {
+        await apiRequest(`/api/expenses/${expenseId}`, {
+            method: 'DELETE'
+        });
+
+        project.expenses = project.expenses.filter(e => e.id !== expenseId);
+        updateDashboard();
+    } catch (error) {
+        alert('Erreur lors de la suppression de la dépense');
+        throw error;
+    }
 }
 
 function getTotalExpenses() {
@@ -112,7 +229,7 @@ function getTotalExpenses() {
 // TASK MANAGEMENT
 // ========================================
 
-function addTask(name, status, priority, notes = '') {
+async function addTask(name, status, priority, notes = '') {
     const project = getCurrentProject();
     if (!project) return;
 
@@ -125,31 +242,57 @@ function addTask(name, status, priority, notes = '') {
         createdAt: new Date().toISOString()
     };
 
-    project.tasks.push(task);
-    saveToLocalStorage();
-    updateDashboard();
-    return task;
+    try {
+        const created = await apiRequest(`/api/projects/${project.id}/tasks`, {
+            method: 'POST',
+            body: JSON.stringify(task)
+        });
+
+        project.tasks.push(created);
+        updateDashboard();
+        return created;
+    } catch (error) {
+        alert('Erreur lors de l\'ajout de la tâche');
+        throw error;
+    }
 }
 
-function updateTaskStatus(taskId, newStatus) {
+async function updateTaskStatus(taskId, newStatus) {
     const project = getCurrentProject();
     if (!project) return;
 
     const task = project.tasks.find(t => t.id === taskId);
-    if (task) {
-        task.status = newStatus;
-        saveToLocalStorage();
+    if (!task) return;
+
+    try {
+        const updated = await apiRequest(`/api/tasks/${taskId}`, {
+            method: 'PUT',
+            body: JSON.stringify({ status: newStatus })
+        });
+
+        task.status = updated.status;
         updateDashboard();
+    } catch (error) {
+        alert('Erreur lors de la mise à jour de la tâche');
+        throw error;
     }
 }
 
-function deleteTask(taskId) {
+async function deleteTask(taskId) {
     const project = getCurrentProject();
     if (!project) return;
 
-    project.tasks = project.tasks.filter(t => t.id !== taskId);
-    saveToLocalStorage();
-    updateDashboard();
+    try {
+        await apiRequest(`/api/tasks/${taskId}`, {
+            method: 'DELETE'
+        });
+
+        project.tasks = project.tasks.filter(t => t.id !== taskId);
+        updateDashboard();
+    } catch (error) {
+        alert('Erreur lors de la suppression de la tâche');
+        throw error;
+    }
 }
 
 function getCompletedTasksCount() {
@@ -312,9 +455,8 @@ function toggleTaskStatus(taskId) {
 
     const task = project.tasks.find(t => t.id === taskId);
     if (task) {
-        task.status = task.status === 'done' ? 'todo' : 'done';
-        saveToLocalStorage();
-        updateDashboard();
+        const newStatus = task.status === 'done' ? 'todo' : 'done';
+        updateTaskStatus(taskId, newStatus);
     }
 }
 
@@ -381,14 +523,17 @@ function escapeHtml(text) {
 // EVENT LISTENERS
 // ========================================
 
-document.addEventListener('DOMContentLoaded', () => {
-    // Load data
-    loadFromLocalStorage();
+document.addEventListener('DOMContentLoaded', async () => {
+    // Check for and migrate old localStorage data
+    await migrateFromLocalStorage();
+
+    // Load data from server
+    await loadFromServer();
 
     // Project selector
     document.getElementById('currentProject').addEventListener('change', (e) => {
         state.currentProjectId = e.target.value || null;
-        saveToLocalStorage();
+        localStorage.setItem('currentProjectId', state.currentProjectId || '');
         updateDashboard();
     });
 
@@ -398,13 +543,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Project form
-    document.getElementById('projectForm').addEventListener('submit', (e) => {
+    document.getElementById('projectForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const name = document.getElementById('projectName').value;
         const budget = document.getElementById('projectBudget').value;
         const description = document.getElementById('projectDescription').value;
 
-        createProject(name, budget, description);
+        await createProject(name, budget, description);
 
         // Reset form
         e.target.reset();
@@ -423,14 +568,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Expense form
-    document.getElementById('expenseForm').addEventListener('submit', (e) => {
+    document.getElementById('expenseForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const name = document.getElementById('expenseName').value;
         const amount = document.getElementById('expenseAmount').value;
         const category = document.getElementById('expenseCategory').value;
         const date = document.getElementById('expenseDate').value;
 
-        addExpense(name, amount, category, date);
+        await addExpense(name, amount, category, date);
 
         // Reset form
         e.target.reset();
@@ -447,14 +592,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Task form
-    document.getElementById('taskForm').addEventListener('submit', (e) => {
+    document.getElementById('taskForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const name = document.getElementById('taskName').value;
         const status = document.getElementById('taskStatus').value;
         const priority = document.getElementById('taskPriority').value;
         const notes = document.getElementById('taskNotes').value;
 
-        addTask(name, status, priority, notes);
+        await addTask(name, status, priority, notes);
 
         // Reset form
         e.target.reset();
