@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion de Chantier - One Roof</title>
+
+    <!-- Fonts (same as main site) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="gestion-chantier.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header__content">
+                <a href="index.html" class="logo">
+                    <span class="logo__main">ONE ROOF</span>
+                    <span class="logo__sub">Gestion de Chantier</span>
+                </a>
+                <nav class="header__nav">
+                    <button class="btn btn--ghost" onclick="window.location.href='index.html'">
+                        Retour au site
+                    </button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Dashboard -->
+    <main class="dashboard">
+        <div class="container">
+            <!-- Dashboard Header -->
+            <div class="dashboard__header">
+                <div>
+                    <h1 class="dashboard__title">Mon Chantier de Rénovation</h1>
+                    <p class="dashboard__subtitle">Suivez l'avancement et les dépenses de votre projet</p>
+                </div>
+                <button class="btn btn--primary" id="addProjectBtn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Nouveau Projet
+                </button>
+            </div>
+
+            <!-- Project Selector -->
+            <div class="project-selector" id="projectSelector">
+                <label for="currentProject">Projet actuel :</label>
+                <select id="currentProject" class="project-select">
+                    <option value="">Sélectionner un projet...</option>
+                </select>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="stats-grid" id="statsGrid">
+                <div class="stat-card stat-card--primary">
+                    <div class="stat-card__icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="9" y1="9" x2="15" y2="9"></line>
+                            <line x1="9" y1="15" x2="15" y2="15"></line>
+                        </svg>
+                    </div>
+                    <div class="stat-card__content">
+                        <p class="stat-card__label">Budget Total</p>
+                        <p class="stat-card__value" id="budgetTotal">0 €</p>
+                    </div>
+                </div>
+
+                <div class="stat-card stat-card--success">
+                    <div class="stat-card__icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                        </svg>
+                    </div>
+                    <div class="stat-card__content">
+                        <p class="stat-card__label">Dépenses Réelles</p>
+                        <p class="stat-card__value" id="expensesTotal">0 €</p>
+                    </div>
+                </div>
+
+                <div class="stat-card stat-card--warning">
+                    <div class="stat-card__icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                    </div>
+                    <div class="stat-card__content">
+                        <p class="stat-card__label">Reste à Dépenser</p>
+                        <p class="stat-card__value" id="remainingBudget">0 €</p>
+                    </div>
+                </div>
+
+                <div class="stat-card stat-card--info">
+                    <div class="stat-card__icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                        </svg>
+                    </div>
+                    <div class="stat-card__content">
+                        <p class="stat-card__label">Tâches Terminées</p>
+                        <p class="stat-card__value" id="tasksCompleted">0/0</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content Grid -->
+            <div class="content-grid">
+                <!-- Financial Management -->
+                <section class="card">
+                    <div class="card__header">
+                        <h2 class="card__title">Gestion Financière</h2>
+                        <button class="btn btn--small btn--primary" id="addExpenseBtn">
+                            + Ajouter une Dépense
+                        </button>
+                    </div>
+
+                    <div class="card__body">
+                        <!-- Budget Progress Bar -->
+                        <div class="budget-progress">
+                            <div class="budget-progress__header">
+                                <span>Utilisation du budget</span>
+                                <span id="budgetPercentage">0%</span>
+                            </div>
+                            <div class="budget-progress__bar">
+                                <div class="budget-progress__fill" id="budgetProgressFill"></div>
+                            </div>
+                        </div>
+
+                        <!-- Expenses List -->
+                        <div class="expenses-list" id="expensesList">
+                            <p class="empty-state">Aucune dépense enregistrée</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Tasks Management -->
+                <section class="card">
+                    <div class="card__header">
+                        <h2 class="card__title">Suivi des Tâches</h2>
+                        <button class="btn btn--small btn--primary" id="addTaskBtn">
+                            + Ajouter une Tâche
+                        </button>
+                    </div>
+
+                    <div class="card__body">
+                        <!-- Task Filters -->
+                        <div class="task-filters">
+                            <button class="filter-btn active" data-filter="all">Toutes</button>
+                            <button class="filter-btn" data-filter="todo">À faire</button>
+                            <button class="filter-btn" data-filter="inprogress">En cours</button>
+                            <button class="filter-btn" data-filter="done">Terminées</button>
+                        </div>
+
+                        <!-- Tasks List -->
+                        <div class="tasks-list" id="tasksList">
+                            <p class="empty-state">Aucune tâche enregistrée</p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal: Add/Edit Project -->
+    <div class="modal" id="projectModal">
+        <div class="modal__overlay"></div>
+        <div class="modal__content">
+            <div class="modal__header">
+                <h3 class="modal__title" id="projectModalTitle">Nouveau Projet</h3>
+                <button class="modal__close" id="closeProjectModal">&times;</button>
+            </div>
+            <form class="modal__body" id="projectForm">
+                <div class="form-group">
+                    <label for="projectName">Nom du Projet</label>
+                    <input type="text" id="projectName" class="form-input" placeholder="Ex: Rénovation maison" required>
+                </div>
+                <div class="form-group">
+                    <label for="projectBudget">Budget Total (€)</label>
+                    <input type="number" id="projectBudget" class="form-input" placeholder="Ex: 50000" min="0" step="100" required>
+                </div>
+                <div class="form-group">
+                    <label for="projectDescription">Description</label>
+                    <textarea id="projectDescription" class="form-input" rows="3" placeholder="Description du projet..."></textarea>
+                </div>
+                <div class="modal__footer">
+                    <button type="button" class="btn btn--ghost" id="cancelProjectBtn">Annuler</button>
+                    <button type="submit" class="btn btn--primary">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Add Expense -->
+    <div class="modal" id="expenseModal">
+        <div class="modal__overlay"></div>
+        <div class="modal__content">
+            <div class="modal__header">
+                <h3 class="modal__title">Ajouter une Dépense</h3>
+                <button class="modal__close" id="closeExpenseModal">&times;</button>
+            </div>
+            <form class="modal__body" id="expenseForm">
+                <div class="form-group">
+                    <label for="expenseName">Description</label>
+                    <input type="text" id="expenseName" class="form-input" placeholder="Ex: Matériaux plomberie" required>
+                </div>
+                <div class="form-group">
+                    <label for="expenseAmount">Montant (€)</label>
+                    <input type="number" id="expenseAmount" class="form-input" placeholder="Ex: 1500" min="0" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label for="expenseCategory">Catégorie</label>
+                    <select id="expenseCategory" class="form-input" required>
+                        <option value="materiaux">Matériaux</option>
+                        <option value="main-oeuvre">Main d'œuvre</option>
+                        <option value="equipement">Équipement</option>
+                        <option value="services">Services</option>
+                        <option value="autre">Autre</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="expenseDate">Date</label>
+                    <input type="date" id="expenseDate" class="form-input" required>
+                </div>
+                <div class="modal__footer">
+                    <button type="button" class="btn btn--ghost" id="cancelExpenseBtn">Annuler</button>
+                    <button type="submit" class="btn btn--primary">Ajouter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Add Task -->
+    <div class="modal" id="taskModal">
+        <div class="modal__overlay"></div>
+        <div class="modal__content">
+            <div class="modal__header">
+                <h3 class="modal__title">Ajouter une Tâche</h3>
+                <button class="modal__close" id="closeTaskModal">&times;</button>
+            </div>
+            <form class="modal__body" id="taskForm">
+                <div class="form-group">
+                    <label for="taskName">Description de la tâche</label>
+                    <input type="text" id="taskName" class="form-input" placeholder="Ex: Installer la plomberie" required>
+                </div>
+                <div class="form-group">
+                    <label for="taskStatus">Statut</label>
+                    <select id="taskStatus" class="form-input" required>
+                        <option value="todo">À faire</option>
+                        <option value="inprogress">En cours</option>
+                        <option value="done">Terminée</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="taskPriority">Priorité</label>
+                    <select id="taskPriority" class="form-input" required>
+                        <option value="low">Basse</option>
+                        <option value="medium">Moyenne</option>
+                        <option value="high">Haute</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="taskNotes">Notes</label>
+                    <textarea id="taskNotes" class="form-input" rows="3" placeholder="Notes additionnelles..."></textarea>
+                </div>
+                <div class="modal__footer">
+                    <button type="button" class="btn btn--ghost" id="cancelTaskBtn">Annuler</button>
+                    <button type="submit" class="btn btn--primary">Ajouter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="gestion-chantier.js"></script>
+</body>
+</html>
